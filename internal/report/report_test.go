@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kavinbm16/fixmyrouter/internal/checks"
-	"github.com/kavinbm16/fixmyrouter/internal/discover"
-	"github.com/kavinbm16/fixmyrouter/internal/speed"
+	"github.com/Kavin-bm/fixmyrouter/internal/checks"
+	"github.com/Kavin-bm/fixmyrouter/internal/discover"
+	"github.com/Kavin-bm/fixmyrouter/internal/speed"
 )
 
 func TestText(t *testing.T) {

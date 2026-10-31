@@ -2,7 +2,7 @@
 
 **fixmyrouter** checks the network your family uses every day (crowded channel, 2.4 GHz, weak signal, slow DNS, lag under load, Telnet left open, UPnP, weak encryption), gives it a score out of 100, and tells you what to change in plain English. It's read-only until you say yes, and every change has a one-command undo.
 
-[![CI](https://github.com/kavinbm16/fixmyrouter/actions/workflows/ci.yml/badge.svg)](https://github.com/kavinbm16/fixmyrouter/actions/workflows/ci.yml)
+[![CI](https://github.com/Kavin-bm/fixmyrouter/actions/workflows/ci.yml/badge.svg)](https://github.com/Kavin-bm/fixmyrouter/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![macOS · Linux · Windows](https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-single%20binary-blue)
 
@@ -13,16 +13,16 @@
 ## Quick start
 
 ```sh
-git clone https://github.com/kavinbm16/fixmyrouter && cd fixmyrouter
+git clone https://github.com/Kavin-bm/fixmyrouter && cd fixmyrouter
 make build && ./bin/fixmyrouter ui        # or: ./bin/fixmyrouter check
 ```
 
 You need Go 1.22+. These one-liners go live with the first tagged release (**coming soon**; the config and script are in this repo and tested locally):
 
 ```sh
-brew install kavinbm16/tap/fixmyrouter                                                  # macOS, Linux
-curl -fsSL https://raw.githubusercontent.com/kavinbm16/fixmyrouter/main/install.sh | sh  # macOS, Linux (verifies SHA-256)
-go install github.com/kavinbm16/fixmyrouter/cmd/fixmyrouter@latest                       # anywhere with Go
+brew install Kavin-bm/tap/fixmyrouter                                                  # macOS, Linux
+curl -fsSL https://raw.githubusercontent.com/Kavin-bm/fixmyrouter/main/install.sh | sh  # macOS, Linux (verifies SHA-256)
+go install github.com/Kavin-bm/fixmyrouter/cmd/fixmyrouter@latest                       # anywhere with Go
 ```
 
 Windows: download the zip from Releases (coming soon).
@@ -68,7 +68,7 @@ Every command takes `--json`. Exit codes are stable: `0` nothing to fix, `1` err
 | Wi-Fi details and neighbour scan | ✅ `system_profiler` | `iw` + `nmcli` | `netsh wlan` |
 | Automatic DNS fix + undo | ✅ tested on a real Mac | manual steps (coming soon) | manual steps (coming soon) |
 
-Only macOS has been run end to end so far. Linux and Windows build in CI and their OS-output parsers have unit tests, but nobody has run them on real hardware yet. If you do, please [share a result](https://github.com/kavinbm16/fixmyrouter/issues/new?template=result.yml).
+Only macOS has been run end to end so far. Linux and Windows build in CI and their OS-output parsers have unit tests, but nobody has run them on real hardware yet. If you do, please [share a result](https://github.com/Kavin-bm/fixmyrouter/issues/new?template=result.yml).
 
 ## Safety promises
 
@@ -83,7 +83,7 @@ Only macOS has been run end to end so far. Linux and Windows build in CI and the
 Using Claude Code, Codex, Gemini CLI or Cursor? Paste this:
 
 ```text
-Use fixmyrouter (https://github.com/kavinbm16/fixmyrouter) to find out why my Wi-Fi is slow or unsafe.
+Use fixmyrouter (https://github.com/Kavin-bm/fixmyrouter) to find out why my Wi-Fi is slow or unsafe.
 Follow PROMPT.md in that repo exactly: run `fixmyrouter check --json`, explain the score and each
 finding to me in plain language, walk me through router settings step by step, and ask me before
 every change. Never log in to my router.
@@ -111,11 +111,11 @@ Start at 100. Each open problem costs points by severity: high 25, medium 12, lo
 
 ## Contributing
 
-The most useful contribution needs no Go: **add your router**. Copy one YAML file, fill in where each setting lives, and run `fixmyrouter profiles validate profiles`. See [profiles/README.md](profiles/README.md), or use the [Add my router](https://github.com/kavinbm16/fixmyrouter/issues/new?template=router-profile.yml) form. Code contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Starter tasks: [GOOD_FIRST_ISSUES.md](GOOD_FIRST_ISSUES.md).
+The most useful contribution needs no Go: **add your router**. Copy one YAML file, fill in where each setting lives, and run `fixmyrouter profiles validate profiles`. See [profiles/README.md](profiles/README.md), or use the [Add my router](https://github.com/Kavin-bm/fixmyrouter/issues/new?template=router-profile.yml) form. Code contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Starter tasks: [GOOD_FIRST_ISSUES.md](GOOD_FIRST_ISSUES.md).
 
 ### Contributors
 
-<a href="https://github.com/kavinbm16/fixmyrouter/graphs/contributors"><img src="https://contrib.rocks/image?repo=kavinbm16/fixmyrouter" alt="Contributors"></a>
+<a href="https://github.com/Kavin-bm/fixmyrouter/graphs/contributors"><img src="https://contrib.rocks/image?repo=Kavin-bm/fixmyrouter" alt="Contributors"></a>
 
 ## License
 

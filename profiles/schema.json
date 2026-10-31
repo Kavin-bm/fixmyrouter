@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/kavinbm16/fixmyrouter/profiles/schema.json",
+  "$id": "https://github.com/Kavin-bm/fixmyrouter/profiles/schema.json",
   "title": "fixmyrouter router profile",
   "description": "Where each setting lives in one router model's admin page. Never include credentials. `fixmyrouter profiles validate` is the authoritative check.",
   "type": "object",

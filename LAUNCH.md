@@ -37,7 +37,7 @@ The part I like most: paste one prompt into Claude Code / Codex / Gemini CLI and
 **6/**
 Router admin pages are all different, so fixmyrouter grows through tiny YAML profiles: "on a TP-Link Archer C6, UPnP lives under Advanced > NAT Forwarding". If you own a JioFiber, Airtel Xstream, TP-Link, D-Link or Netgear router, a profile PR takes 5 minutes 🙏
 
-github.com/kavinbm16/fixmyrouter
+github.com/Kavin-bm/fixmyrouter
 
 ## Show HN
 

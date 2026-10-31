@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kavinbm16/fixmyrouter/internal/checks"
+	"github.com/Kavin-bm/fixmyrouter/internal/checks"
 )
 
 const serviceOrder = `An asterisk (*) denotes that a network service is disabled.

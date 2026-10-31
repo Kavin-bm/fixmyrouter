@@ -13,10 +13,10 @@ Paste this file (or a link to it) into Claude Code, Codex, Gemini CLI, Cursor or
 ## Steps
 
 1. **Install** (ask before installing anything). Use the first that works:
-   - macOS/Linux with Homebrew: `brew install kavinbm16/tap/fixmyrouter`
-   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/kavinbm16/fixmyrouter/main/install.sh | sh`
-   - With Go 1.22+: `go install github.com/kavinbm16/fixmyrouter/cmd/fixmyrouter@latest`
-   - Windows: download the zip for your CPU from https://github.com/kavinbm16/fixmyrouter/releases
+   - macOS/Linux with Homebrew: `brew install Kavin-bm/tap/fixmyrouter`
+   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/Kavin-bm/fixmyrouter/main/install.sh | sh`
+   - With Go 1.22+: `go install github.com/Kavin-bm/fixmyrouter/cmd/fixmyrouter@latest`
+   - Windows: download the zip for your CPU from https://github.com/Kavin-bm/fixmyrouter/releases
 
    (Release binaries and the Homebrew tap are published with the first tagged release.)
 

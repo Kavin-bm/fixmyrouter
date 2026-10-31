@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kavinbm16/fixmyrouter/internal/checks"
-	"github.com/kavinbm16/fixmyrouter/internal/discover"
-	"github.com/kavinbm16/fixmyrouter/internal/fix"
-	"github.com/kavinbm16/fixmyrouter/internal/report"
-	"github.com/kavinbm16/fixmyrouter/internal/run"
+	"github.com/Kavin-bm/fixmyrouter/internal/checks"
+	"github.com/Kavin-bm/fixmyrouter/internal/discover"
+	"github.com/Kavin-bm/fixmyrouter/internal/fix"
+	"github.com/Kavin-bm/fixmyrouter/internal/report"
+	"github.com/Kavin-bm/fixmyrouter/internal/run"
 )
 
 //go:embed static
