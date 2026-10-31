@@ -12,16 +12,19 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/kavinbm/fixmyrouter/internal/discover"
 	"github.com/kavinbm/fixmyrouter/internal/fix"
+	"github.com/kavinbm/fixmyrouter/internal/mcp"
 	"github.com/kavinbm/fixmyrouter/internal/report"
 	"github.com/kavinbm/fixmyrouter/internal/run"
 	"github.com/kavinbm/fixmyrouter/internal/store"
 	"github.com/kavinbm/fixmyrouter/internal/ui"
+	"github.com/kavinbm/fixmyrouter/profiles"
 )
 
 // version is set by the release build (-ldflags "-X main.version=...").
@@ -54,6 +57,9 @@ Usage:
   fixmyrouter history [--json]          past scores and every change made
   fixmyrouter ui [--port 7979] [--no-open]
                                         local web UI on 127.0.0.1 (nothing loads from the internet)
+  fixmyrouter profiles validate [files or dirs...] | list
+                                        check router profiles (for contributors)
+  fixmyrouter mcp                       MCP server on stdio for Claude Code, Codex, Gemini CLI
   fixmyrouter version
 
 Exit codes: 0 nothing to fix, 1 error, 2 usage, 3 found something to fix.
@@ -85,6 +91,10 @@ func main() {
 		err = runHistory(args)
 	case "ui":
 		err = runUI(ctx, args)
+	case "profiles":
+		err = runProfiles(args)
+	case "mcp":
+		err = mcp.Serve(ctx, version, os.Stdin, os.Stdout)
 	case "version", "--version", "-v":
 		fmt.Println("fixmyrouter", version)
 	case "help", "-h", "--help":
@@ -218,7 +228,7 @@ func runFix(args []string, stdin io.Reader) error {
 	fmt.Printf("Finding:  %s (from your %s result)\n", f.Title, from.GeneratedAt.Local().Format("Jan 2 15:04"))
 	fmt.Printf("Change:   %s\n", f.AutoFix.Summary)
 	fmt.Printf("Network:  %s\nBefore:   %s\nAfter:    %s\n", c.Service, before, strings.Join(c.After, ", "))
-	fmt.Printf("Snapshot: saved to %s before the change; `fixmyrouter undo` puts it back.\n", store.Dir())
+	fmt.Printf("Snapshot: saved to %s before anything changes; `fixmyrouter undo` puts it back.\n", store.Dir())
 	if !*yes {
 		fmt.Print("\nApply this change? Type yes to continue: ")
 		line, _ := bufio.NewReader(stdin).ReadString('\n')
@@ -329,4 +339,55 @@ func openBrowser(url string) {
 		cmd = exec.Command("xdg-open", url)
 	}
 	_ = cmd.Start()
+}
+
+func runProfiles(args []string) error {
+	if len(args) == 0 || (args[0] != "validate" && args[0] != "list") {
+		return fmt.Errorf("usage: fixmyrouter profiles validate [files or dirs...] | list")
+	}
+	if args[0] == "list" {
+		all, err := profiles.All()
+		for _, p := range all {
+			v := "unverified"
+			if p.Verified {
+				v = "verified"
+			}
+			fmt.Printf("%-40s %s %s %s (%s)\n", p.File, p.Vendor, p.Model, p.HardwareVersion, v)
+		}
+		return err
+	}
+	if len(args) == 1 {
+		all, err := profiles.All()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%d built-in profile(s) valid.\n", len(all))
+		return nil
+	}
+	bad := 0
+	for _, root := range args[1:] {
+		err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() || (filepath.Ext(path) != ".yaml" && filepath.Ext(path) != ".yml") {
+				return err
+			}
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			if _, err := profiles.Parse(path, b); err != nil {
+				bad++
+				fmt.Println("✗", err)
+			} else {
+				fmt.Println("✓", path)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	if bad > 0 {
+		return fmt.Errorf("%d profile(s) invalid", bad)
+	}
+	return nil
 }

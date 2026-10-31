@@ -1,0 +1,52 @@
+# GoReleaser v2. Release: push a tag (vX.Y.Z); .github/workflows/release.yml runs this.
+# Local dry run: goreleaser release --snapshot --clean
+version: 2
+
+project_name: fixmyrouter
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/fixmyrouter
+    env: [CGO_ENABLED=0]
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags: ["-s -w -X main.version={{.Version}}"]
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files: [LICENSE, README.md]
+
+release:
+  github:
+    owner: kavinbm
+    name: fixmyrouter
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  filters:
+    exclude: ["^docs:", "^test:"]
+
+# Homebrew: `brew install kavinbm/tap/fixmyrouter`. Needs a kavinbm/homebrew-tap
+# repo and a HOMEBREW_TAP_TOKEN secret with write access to it.
+homebrew_casks:
+  - name: fixmyrouter
+    repository:
+      owner: kavinbm
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/kavinbm/fixmyrouter
+    description: Find out why your Wi-Fi is slow or unsafe, in plain English
+    license: MIT
+    # Binaries are not notarized yet; if macOS blocks the first run:
+    #   xattr -d com.apple.quarantine "$(which fixmyrouter)"

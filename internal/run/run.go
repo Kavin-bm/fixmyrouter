@@ -14,6 +14,7 @@ import (
 	"github.com/kavinbm/fixmyrouter/internal/report"
 	"github.com/kavinbm/fixmyrouter/internal/speed"
 	"github.com/kavinbm/fixmyrouter/internal/store"
+	"github.com/kavinbm/fixmyrouter/profiles"
 )
 
 // Kinds of run.
@@ -72,6 +73,14 @@ func Run(ctx context.Context, version string, opt Options) (*report.Audit, error
 	wg.Wait()
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if p := profiles.Find(g.HTTPTitle, g.HTTPServer); p != nil {
+		a.Profile = p.File
+		for i, f := range a.Findings {
+			if f.Status == checks.StatusWarn || f.Status == checks.StatusFail {
+				a.Findings[i].RouterSteps = p.Steps(f.ID, f.Title)
+			}
+		}
 	}
 	sortFindings(a.Findings)
 	a.Summary = report.Summarize(a.Findings)

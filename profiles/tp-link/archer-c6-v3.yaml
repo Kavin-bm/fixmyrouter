@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../schema.json
+# Menu paths from TP-Link's Archer C6 v3 user guide (web UI "Advanced" tab).
+# Not yet checked on a real device: if you own one, test them and set verified: true.
+vendor: TP-Link
+model: Archer C6
+hardware_version: v3
+firmware_tested: "not device-tested yet"
+isp_branded: false
+contributed_by: kavinbm
+verified: false
+source: "TP-Link Archer C6 v3 user guide (tp-link.com support site)"
+
+match:
+  http_title_contains: ["Archer C6"]
+  http_server_contains: []
+
+admin:
+  url: http://192.168.0.1/
+  https_supported: true
+
+settings:
+  wifi_channel_2g:
+    menu_path: "Advanced > Wireless > Wireless Settings > 2.4GHz > Channel"
+    notes: "Prefer 1, 6 or 11."
+  wifi_channel_5g:
+    menu_path: "Advanced > Wireless > Wireless Settings > 5GHz > Channel"
+  dns_servers:
+    menu_path: "Advanced > Network > DHCP Server > Primary DNS / Secondary DNS"
+  sqm_qos:
+    menu_path: "Advanced > QoS"
+    notes: "Set upload and download bandwidth slightly below your plan speed."
+  upnp:
+    menu_path: "Advanced > NAT Forwarding > UPnP"
+    notes: "Turn it off unless a game console needs it."
+  https_admin:
+    menu_path: "Advanced > System > Administration > Local Management"
+  wps:
+    menu_path: "Advanced > Wireless > WPS"
+  remote_management:
+    menu_path: "Advanced > System > Administration > Remote Management"
+  wifi_security:
+    menu_path: "Advanced > Wireless > Wireless Settings > Security"
+    notes: "Choose WPA/WPA2-Personal with AES, or WPA2-PSK only if offered."

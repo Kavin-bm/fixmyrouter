@@ -23,6 +23,7 @@ type Audit struct {
 	Score       int               `json:"score"`
 	Grade       string            `json:"grade"`
 	Gateway     *discover.Gateway `json:"gateway"`
+	Profile     string            `json:"router_profile,omitempty"` // matched profiles/ file
 	Speed       *speed.Report     `json:"speed,omitempty"`
 	Findings    []checks.Finding  `json:"findings"`
 	Summary     map[string]int    `json:"summary"`
@@ -62,6 +63,9 @@ func Text(w io.Writer, a *Audit, prev *Audit) {
 		fmt.Fprintf(w, "\n%s  %s [%s]\n   %s\n", icons[f.Status], f.Title, f.Severity, f.Detail)
 		if f.Fix != "" {
 			fmt.Fprintf(w, "   How to fix: %s\n", f.Fix)
+		}
+		if f.RouterSteps != "" {
+			fmt.Fprintf(w, "   %s\n", f.RouterSteps)
 		}
 		if f.AutoFix != nil {
 			fmt.Fprintf(w, "   Can do it for you: `fixmyrouter fix %s` (%s Asks first; `fixmyrouter undo` reverts.)\n", f.ID, f.AutoFix.Summary)

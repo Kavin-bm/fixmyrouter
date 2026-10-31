@@ -1,0 +1,51 @@
+name: Add my router
+description: Tell us where the settings live on your router, so fixmyrouter can give exact steps. No coding needed.
+title: "profile: <vendor> <model>"
+labels: ["router profile", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! This becomes a file in `profiles/`. **Never paste passwords or default credentials**, only menu paths.
+        Prefer a pull request? Copy `profiles/tp-link/archer-c6-v3.yaml`, edit it, and run `fixmyrouter profiles validate profiles`.
+  - type: input
+    id: model
+    attributes: { label: Vendor and model, placeholder: "TP-Link Archer C6 v3" }
+    validations: { required: true }
+  - type: input
+    id: firmware
+    attributes: { label: Firmware version, description: "Usually on the admin page's status screen" }
+    validations: { required: true }
+  - type: textarea
+    id: discover
+    attributes:
+      label: Output of `fixmyrouter discover --json`
+      description: Remove the MAC address if you prefer.
+      render: json
+    validations: { required: true }
+  - type: textarea
+    id: paths
+    attributes:
+      label: Where each setting lives
+      description: Write "n/a" if your router has no such option.
+      value: |
+        2.4 GHz channel:
+        5 GHz channel:
+        Band steering / smart connect:
+        DNS servers (DHCP):
+        QoS / SQM:
+        UPnP:
+        Telnet:
+        HTTPS admin:
+        WPS:
+        Remote management:
+        Wi-Fi security mode:
+    validations: { required: true }
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Checks
+      options:
+        - label: I checked these menu paths on my own router.
+        - label: I did not include any password or username.
+          required: true

@@ -1,0 +1,25 @@
+name: Share a before/after result
+description: Did a fix help? Real numbers help us tune the advice and thresholds.
+title: "result: <score before> -> <score after> (<what you changed>)"
+labels: ["result"]
+body:
+  - type: input
+    id: router
+    attributes: { label: "Router (vendor, model, ISP if ISP-supplied)" }
+  - type: input
+    id: scores
+    attributes: { label: "Score before and after", placeholder: "64 -> 91" }
+    validations: { required: true }
+  - type: textarea
+    id: changed
+    attributes: { label: "What did you change?" }
+    validations: { required: true }
+  - type: textarea
+    id: json
+    attributes:
+      label: Output of `fixmyrouter check --json` (after)
+      description: Remove the MAC address and anything else you'd rather keep private.
+      render: json
+  - type: textarea
+    id: wrong
+    attributes: { label: "Was any advice wrong or confusing?" }

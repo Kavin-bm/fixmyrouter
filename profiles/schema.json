@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kavinbm/fixmyrouter/profiles/schema.json",
+  "title": "fixmyrouter router profile",
+  "description": "Where each setting lives in one router model's admin page. Never include credentials. `fixmyrouter profiles validate` is the authoritative check.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["vendor", "model", "firmware_tested", "contributed_by", "match", "settings"],
+  "properties": {
+    "vendor": { "type": "string", "minLength": 1, "description": "Brand as printed on the device" },
+    "model": { "type": "string", "minLength": 1 },
+    "hardware_version": { "type": "string" },
+    "firmware_tested": { "type": "string", "minLength": 1 },
+    "isp_branded": { "type": "boolean" },
+    "contributed_by": { "type": "string", "minLength": 1, "description": "Your GitHub username" },
+    "verified": { "type": "boolean", "description": "true only if you checked every menu path on a real device" },
+    "source": { "type": "string", "description": "Where the menu paths come from (your router, or a vendor manual)" },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "http_title_contains": { "type": "array", "items": { "type": "string", "minLength": 3 } },
+        "http_server_contains": { "type": "array", "items": { "type": "string", "minLength": 3 } }
+      }
+    },
+    "admin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string" },
+        "https_supported": { "type": "boolean" }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "wifi_channel_2g": { "$ref": "#/$defs/setting" },
+        "wifi_channel_5g": { "$ref": "#/$defs/setting" },
+        "band_steering": { "$ref": "#/$defs/setting" },
+        "dns_servers": { "$ref": "#/$defs/setting" },
+        "sqm_qos": { "$ref": "#/$defs/setting" },
+        "telnet": { "$ref": "#/$defs/setting" },
+        "upnp": { "$ref": "#/$defs/setting" },
+        "https_admin": { "$ref": "#/$defs/setting" },
+        "wps": { "$ref": "#/$defs/setting" },
+        "remote_management": { "$ref": "#/$defs/setting" },
+        "wifi_security": { "$ref": "#/$defs/setting" }
+      }
+    }
+  },
+  "$defs": {
+    "setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["menu_path"],
+      "properties": {
+        "menu_path": { "type": "string", "minLength": 1, "description": "e.g. \"Advanced > NAT Forwarding > UPnP\", or \"n/a\"" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

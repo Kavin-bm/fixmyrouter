@@ -1,0 +1,22 @@
+name: Bug report
+description: Something broke or a result looks wrong.
+labels: ["bug"]
+body:
+  - type: input
+    id: os
+    attributes: { label: OS and version, placeholder: "macOS 15.3 / Ubuntu 24.04 / Windows 11 24H2" }
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes: { label: "`fixmyrouter version`" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: "What happened, and what did you expect?" }
+    validations: { required: true }
+  - type: textarea
+    id: output
+    attributes:
+      label: Output (`fixmyrouter check --json` if relevant)
+      description: Remove your MAC address and anything private.
+      render: shell

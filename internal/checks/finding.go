@@ -18,13 +18,15 @@ const (
 
 // Finding is the result of one check or measurement.
 type Finding struct {
-	ID       string   `json:"id"`
-	Title    string   `json:"title"`
-	Status   string   `json:"status"`
-	Severity string   `json:"severity"` // info, low, medium, high
-	Detail   string   `json:"detail"`
-	Fix      string   `json:"fix,omitempty"`
-	AutoFix  *AutoFix `json:"auto_fix,omitempty"`
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Status   string `json:"status"`
+	Severity string `json:"severity"` // info, low, medium, high
+	Detail   string `json:"detail"`
+	Fix      string `json:"fix,omitempty"`
+	// RouterSteps are model-specific steps from a community profile, if one matches.
+	RouterSteps string   `json:"router_steps,omitempty"`
+	AutoFix     *AutoFix `json:"auto_fix,omitempty"`
 }
 
 // AutoFix is a change fixmyrouter can make for you, only after a yes, with

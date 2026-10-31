@@ -123,6 +123,7 @@ function findingItem(f) {
       h("h3", {}, f.title)),
     h("p", {}, f.detail),
     f.fix ? h("p", { class: "how muted" }, h("strong", {}, "How to fix: "), f.fix) : null,
+    f.router_steps ? h("p", { class: "how" }, h("strong", {}, "Your router: "), f.router_steps) : null,
     f.auto_fix ? h("div", { class: "actions" },
       h("button", { class: "primary small", type: "button", onclick: () => confirmFix(f) }, "Apply this fix…"),
       h("span", { class: "muted" }, f.auto_fix.summary)) : null);
