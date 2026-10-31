@@ -1,7 +1,8 @@
 // Package mcp is a minimal Model Context Protocol server over stdio
 // (newline-delimited JSON-RPC 2.0), so coding agents can call the same
-// functions as the CLI. Read-only tools run freely; apply_fix refuses unless
-// the agent passes user_confirmed=true after asking the person.
+// functions as the CLI. Read-only tools run freely; apply_fix and
+// measure_fix refuse unless the agent passes user_confirmed=true after asking
+// the person. No tool logs in to the router.
 package mcp
 
 import (
@@ -58,7 +59,7 @@ func tools(version string) []tool {
 		}
 		return m
 	}
-	return []tool{
+	return append(solveTools(version), []tool{
 		{
 			Name: "check",
 			Description: "Measure the home network and return a 0-100 score with plain-language findings. kind=check (everything), speed (Wi-Fi, router latency, DNS) or audit (router security, talks only to the router). " +
@@ -152,7 +153,7 @@ func tools(version string) []tool {
 				return map[string]any{"scores": scores, "changes": changes}, err
 			},
 		},
-	}
+	}...)
 }
 
 func planFix(a map[string]any) (*fix.Change, error) {
@@ -201,7 +202,7 @@ func Serve(ctx context.Context, version string, r io.Reader, w io.Writer) error 
 				"protocolVersion": p.ProtocolVersion,
 				"capabilities":    map[string]any{"tools": map[string]any{}},
 				"serverInfo":      map[string]any{"name": "fixmyrouter", "version": version},
-				"instructions":    "Explain results in plain language. Never call apply_fix without the person's explicit yes. Router settings are never changed by these tools.",
+				"instructions":    "Start with diagnose when the internet is slow; explain the verdict and its numbers in plain language. fixmyrouter cannot make the ISP faster: it fixes what is fixable on the person's side and measures before and after. Never call apply_fix or measure_fix for an automatic fix without the person's explicit yes, and never start a download test or isp_report download without telling them the data use. Report before/after verdicts as given; do not claim an improvement the numbers don't show. Router settings are never changed by these tools: router fixes need the person's own password typed in a terminal.",
 			}
 		case "ping":
 			resp.Result = map[string]any{}

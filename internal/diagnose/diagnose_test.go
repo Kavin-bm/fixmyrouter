@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Kavin-bm/fixmyrouter/internal/diagnose/diagtest"
 	"github.com/Kavin-bm/fixmyrouter/internal/speed"
@@ -206,5 +207,38 @@ func TestRemeasureAndMissingTest(t *testing.T) {
 	}
 	if _, err := PlanAuto(&Action{Level: LevelAdvice}); err == nil {
 		t.Fatal("PlanAuto must refuse non-auto actions")
+	}
+}
+
+func TestMeasureFixGates(t *testing.T) {
+	t.Setenv("FIXMYROUTER_HOME", t.TempDir())
+	f := diagtest.Healthy()
+	f.W.Band, f.W.Channel = "2.4GHz", 6
+	f.DNSMs["192.168.1.1"] = 150
+	ctx := context.Background()
+	before := run(t, f, Options{})
+	if _, err := MeasureFix(ctx, f, "t", nil, "x", true, 0); err == nil {
+		t.Fatal("nil before")
+	}
+	if _, err := MeasureFix(ctx, f, "t", before, "set-dns", false, 0); err == nil || !strings.Contains(err.Error(), "refused") {
+		t.Fatalf("auto fix without yes: %v", err)
+	}
+	if _, err := MeasureFix(ctx, f, "t", before, "wifi-join-5g", false, 0); err == nil {
+		t.Fatal("guided fix without done")
+	}
+	f.W.Band, f.W.TxRateMbps = "5GHz", 866
+	before.Measurements.Local.WiFi.TxRateMbps = 144
+	res, err := MeasureFix(ctx, f, "t", before, "wifi-join-5g", true, 0)
+	if err != nil || !res.Delta.Improved || res.ChangeID != 0 {
+		t.Fatalf("%v %+v", err, res)
+	}
+	// Router fixes never go through agents or the browser.
+	before.Bottlenecks[0].Actions = append(before.Bottlenecks[0].Actions, Action{ID: "router-x", Level: LevelRouter, Metric: MetricNeighbours})
+	if _, err := MeasureFix(ctx, f, "t", before, "router-x", true, 0); err != ErrRouterNeedsTerminal {
+		t.Fatalf("router: %v", err)
+	}
+	before.GeneratedAt = before.GeneratedAt.Add(-time.Hour)
+	if _, err := MeasureFix(ctx, f, "t", before, "wifi-join-5g", true, 0); err == nil {
+		t.Fatal("stale before accepted")
 	}
 }
