@@ -47,7 +47,7 @@ func Run(ctx context.Context, gatewayIP string, opt Options) *Report {
 	} else {
 		r.WiFiNote = "Not on Wi-Fi, or the OS did not report Wi-Fi details."
 	}
-	if p, err := Ping(ctx, gatewayIP, 20); err == nil || p.Received > 0 {
+	if p, _ := Ping(ctx, gatewayIP, 20); p.Received > 0 {
 		r.Gateway = &p
 	}
 	if opt.DNSRounds <= 0 {

@@ -118,10 +118,9 @@ func ParseSPAirPort(data []byte) (WiFi, bool) {
 			w.Channel, w.Band, w.WidthMHz = parseMacChannel(chs)
 			if sn, ok := ifc.Current["spairport_signal_noise"].(string); ok {
 				// "-38 dBm / -93 dBm"
-				parts := strings.Split(sn, "/")
-				if len(parts) == 2 {
-					w.SignalDBm, _ = strconv.Atoi(strings.Fields(parts[0])[0])
-					w.NoiseDBm, _ = strconv.Atoi(strings.Fields(parts[1])[0])
+				if sig, noise, ok := strings.Cut(sn, "/"); ok {
+					w.SignalDBm, _ = strconv.Atoi(strings.TrimSuffix(strings.TrimSpace(sig), " dBm"))
+					w.NoiseDBm, _ = strconv.Atoi(strings.TrimSuffix(strings.TrimSpace(noise), " dBm"))
 				}
 			}
 			w.PHYMode, _ = ifc.Current["spairport_network_phymode"].(string)

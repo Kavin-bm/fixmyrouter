@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -18,6 +19,17 @@ import (
 
 const version = "0.1.0-dev"
 
+// Exit codes are stable so scripts and agents can rely on them.
+const (
+	exitOK       = 0 // ran, nothing to fix
+	exitError    = 1 // could not run (no gateway, OS error, ...)
+	exitUsage    = 2 // bad command or flag
+	exitFindings = 3 // ran, and found something worth fixing
+)
+
+// errFindings signals a successful run that found issues.
+var errFindings = errors.New("findings")
+
 const usage = `fixmyrouter - your Wi-Fi is slower than it should be. Find out why. Read-only.
 
 Usage:
@@ -29,14 +41,16 @@ Usage:
   fixmyrouter mcp                            (coming soon) MCP server for coding agents
   fixmyrouter version
 
-fixmyrouter only talks to your own default gateway. It never tries passwords
+Exit codes: 0 nothing to fix, 1 error, 2 usage, 3 found something to fix.
+
+Router probes go only to your own default gateway. It never tries passwords
 and never changes a setting.
 `
 
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Print(usage)
-		os.Exit(2)
+		os.Exit(exitUsage)
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
@@ -59,11 +73,14 @@ func main() {
 		fmt.Print(usage)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", cmd, usage)
-		os.Exit(2)
+		os.Exit(exitUsage)
 	}
-	if err != nil {
+	switch {
+	case errors.Is(err, errFindings):
+		os.Exit(exitFindings)
+	case err != nil:
 		fmt.Fprintln(os.Stderr, "error:", err)
-		os.Exit(1)
+		os.Exit(exitError)
 	}
 }
 
@@ -102,10 +119,14 @@ func runAudit(ctx context.Context, args []string) error {
 	}
 	a.Summary = report.Summarize(a.Findings)
 	if *asJSON {
-		return report.JSON(os.Stdout, a)
+		err = report.JSON(os.Stdout, a)
+	} else {
+		report.Text(os.Stdout, a)
 	}
-	report.Text(os.Stdout, a)
-	return nil
+	if err == nil && a.Summary[checks.StatusWarn]+a.Summary[checks.StatusFail] > 0 {
+		return errFindings
+	}
+	return err
 }
 
 func runSpeed(ctx context.Context, args []string) error {
@@ -124,8 +145,12 @@ func runSpeed(ctx context.Context, args []string) error {
 	if *asJSON {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(r)
+		err = enc.Encode(r)
+	} else {
+		report.SpeedText(os.Stdout, r)
 	}
-	report.SpeedText(os.Stdout, r)
-	return nil
+	if err == nil && len(r.Suggestions) > 0 {
+		return errFindings
+	}
+	return err
 }

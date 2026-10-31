@@ -41,7 +41,7 @@ func SpeedText(w io.Writer, r *speed.Report) {
 	if g := r.Gateway; g != nil {
 		fmt.Fprintf(w, "Router:     ping %s median %.1f ms, jitter %.1f ms, loss %.0f%% (%d pings)\n", g.Target, g.MedianMs, g.JitterMs, g.LossPct, g.Sent)
 	} else {
-		fmt.Fprintf(w, "Router:     %s did not answer ping\n", r.GatewayIP)
+		fmt.Fprintf(w, "Router:     %s did not answer ping (some routers block it; this is not a problem by itself)\n", r.GatewayIP)
 	}
 	fmt.Fprintln(w, "\nDNS lookup time (median of popular sites):")
 	for _, d := range r.DNS {

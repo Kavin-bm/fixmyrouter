@@ -50,7 +50,7 @@ Your default gateway, its MAC address, and the vendor when the admin page or (wi
 ## Safety promises
 
 - **Read-only today.** fixmyrouter changes nothing on your router or computer. Future fixes will ask before each change and snapshot the old setting first, with a one-command undo.
-- **Your router only.** It only probes your own default gateway, and refuses to run if that isn't a private LAN address.
+- **Your router only.** Router probes go only to your own default gateway (found from your OS routing table; you can't point it at another IP), and it refuses to run if that isn't a private LAN address. The one exception is the UPnP check's standard SSDP discovery packet, which, like every phone and TV, goes to the LAN multicast group; only the gateway's replies are read.
 - **No password guessing.** No brute forcing, no default-credential attempts, nothing sent to the login form.
 - **No firmware changes, ever.**
 - **No telemetry.** The only outside traffic is DNS test lookups, plus the Cloudflare download if you pass `--load` and the MAC-prefix lookup if you pass `--online`.

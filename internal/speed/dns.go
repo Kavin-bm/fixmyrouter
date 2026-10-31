@@ -46,6 +46,15 @@ func SystemResolvers() []string {
 			out = ParseResolvConf(string(b))
 		}
 	}
+	// systemd-resolved's 127.0.0.53 stub caches answers, which would make
+	// "your DNS" look instant. Measure the upstream servers it forwards to.
+	if len(out) > 0 && out[0] == "127.0.0.53" {
+		if b, err := os.ReadFile("/run/systemd/resolve/resolv.conf"); err == nil {
+			if up := ParseResolvConf(string(b)); len(up) > 0 {
+				out = up
+			}
+		}
+	}
 	return out
 }
 

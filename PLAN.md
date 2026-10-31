@@ -13,7 +13,7 @@
 3. **Audit (read-only), the security part:** `fixmyrouter audit`
    - Built: admin page over plain HTTP, Telnet port 23 open, UPnP/SSDP answering.
    - Later: WPS enabled, remote management on the WAN side, DNS hijack (unknown resolvers), firmware age if the profile has it, Wi-Fi security mode (WEP/WPA/WPA2/WPA3), other open LAN-side ports.
-   - Default-credential checks are deliberately **not** in scope for now. If ever added: a tiny vendor-default list, own gateway only, explicit consent, never brute force.
+   - Default-credential or password checks are a **non-goal**: fixmyrouter never sends credentials to any login form, default or otherwise.
 4. **Report:** terminal and JSON today; Markdown report later.
 5. **Fix (opt-in, coming soon):** for models with a profile, apply each suggestion (channel, DNS, QoS, UPnP off...) one at a time after a yes. Snapshot the old setting first.
 6. **Undo (coming soon):** `fixmyrouter undo` restores every snapshot from `~/.fixmyrouter/`.
