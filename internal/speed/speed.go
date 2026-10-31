@@ -6,60 +6,63 @@ package speed
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/kavinbm/fixmyrouter/internal/checks"
 )
 
-// Suggestion is one plain-language thing to try.
-type Suggestion struct {
-	Title  string `json:"title"`
-	Why    string `json:"why"`
-	How    string `json:"how"`
-	Impact string `json:"impact"` // high, medium, low
-}
-
-// Report is the full speed report.
+// Report holds the raw measurements. Advice lives in Findings.
 type Report struct {
 	GatewayIP   string       `json:"gateway_ip"`
 	WiFi        *WiFi        `json:"wifi,omitempty"`
 	WiFiNote    string       `json:"wifi_note,omitempty"`
 	Congestion  *Congestion  `json:"congestion,omitempty"`
 	Gateway     *PingStats   `json:"gateway_latency,omitempty"`
-	DNS         []DNSResult  `json:"dns"`
+	DNS         []DNSResult  `json:"dns,omitempty"`
 	Bufferbloat *Bufferbloat `json:"bufferbloat,omitempty"`
 	BloatNote   string       `json:"bufferbloat_note,omitempty"`
-	Suggestions []Suggestion `json:"suggestions"`
 }
 
-// Options control optional, heavier measurements.
+// Options control which measurements run.
 type Options struct {
-	Load      bool // run the bufferbloat test (downloads up to 200 MB for ~10 s)
+	Internet  bool // DNS comparison against public resolvers
+	Load      bool // bufferbloat test (downloads up to 200 MB for ~10 s)
 	DNSRounds int
 }
 
-// Run performs every measurement and builds suggestions.
+// Run measures Wi-Fi and gateway latency, plus DNS and bufferbloat if asked.
+// The slow OS Wi-Fi query runs alongside the network measurements.
 func Run(ctx context.Context, gatewayIP string, opt Options) *Report {
 	r := &Report{GatewayIP: gatewayIP}
-	if w, ok := DetectWiFi(); ok {
-		r.WiFi = &w
-		if c, ok := Analyze(w); ok {
-			r.Congestion = &c
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if w, ok := DetectWiFi(); ok {
+			r.WiFi = &w
+			if c, ok := Analyze(w); ok {
+				r.Congestion = &c
+			}
+		} else {
+			r.WiFiNote = "Not on Wi-Fi, or the OS did not report Wi-Fi details."
 		}
-	} else {
-		r.WiFiNote = "Not on Wi-Fi, or the OS did not report Wi-Fi details."
-	}
+	}()
 	if p, _ := Ping(ctx, gatewayIP, 20); p.Received > 0 {
 		r.Gateway = &p
 	}
-	if opt.DNSRounds <= 0 {
-		opt.DNSRounds = 3
-	}
-	if sys := SystemResolvers(); len(sys) > 0 {
-		d := MeasureDNS(ctx, "Your current DNS", sys[0], opt.DNSRounds)
-		d.System = true
-		r.DNS = append(r.DNS, d)
-	}
-	for _, p := range PublicResolvers {
-		r.DNS = append(r.DNS, MeasureDNS(ctx, p.Name, p.IP, opt.DNSRounds))
+	if opt.Internet {
+		if opt.DNSRounds <= 0 {
+			opt.DNSRounds = 3
+		}
+		if sys := SystemResolvers(); len(sys) > 0 {
+			d := MeasureDNS(ctx, "Your current DNS", sys[0], opt.DNSRounds)
+			d.System = true
+			r.DNS = append(r.DNS, d)
+		}
+		for _, p := range PublicResolvers {
+			r.DNS = append(r.DNS, MeasureDNS(ctx, p.Name, p.IP, opt.DNSRounds))
+		}
 	}
 	if opt.Load {
 		b, err := MeasureBufferbloat(ctx, "1.1.1.1", 10*time.Second)
@@ -68,10 +71,10 @@ func Run(ctx context.Context, gatewayIP string, opt Options) *Report {
 		} else {
 			r.Bufferbloat = &b
 		}
-	} else {
-		r.BloatNote = "Skipped. Run `fixmyrouter speed --load` to test latency under load (downloads up to 200 MB over ~10 s)."
+	} else if opt.Internet {
+		r.BloatNote = "Skipped. Add --load to test lag under load (downloads up to 200 MB over ~10 s)."
 	}
-	r.Suggestions = Suggest(r)
+	wg.Wait()
 	return r
 }
 
@@ -90,77 +93,82 @@ func SignalQuality(dbm int) string {
 	return "weak"
 }
 
-// Suggest turns measurements into plain-language advice, most useful first.
-func Suggest(r *Report) []Suggestion {
-	var s []Suggestion
+func warn(id, sev, title, detail, fix string) checks.Finding {
+	return checks.Finding{ID: id, Title: title, Status: checks.StatusWarn, Severity: sev, Detail: detail, Fix: fix}
+}
+
+// Findings turns measurements into plain-language problems, most useful first.
+// Only problems are reported; a healthy measurement adds nothing.
+func Findings(r *Report) []checks.Finding {
+	var s []checks.Finding
 	if w := r.WiFi; w != nil {
 		if w.Band == "2.4GHz" && w.Supports5GHz {
-			s = append(s, Suggestion{
-				Title:  "Use 5 GHz Wi-Fi",
-				Why:    "You're on 2.4 GHz, which is slower and shared with neighbours, microwaves and Bluetooth.",
-				How:    "If your router has a second network (often named with '5G'), connect to it. If both bands share one name, enable 'band steering' in the router.",
-				Impact: "high",
-			})
+			s = append(s, warn("wifi-band", "high", "Use 5 GHz Wi-Fi",
+				"You're on 2.4 GHz, which is slower and shared with neighbours, microwaves and Bluetooth.",
+				"If your router has a second network (often named with '5G'), connect to it. If both bands share one name, enable 'band steering' in the router."))
 		}
 		if q := SignalQuality(w.SignalDBm); q == "weak" || q == "fair" {
-			s = append(s, Suggestion{
-				Title:  "Improve Wi-Fi signal",
-				Why:    fmt.Sprintf("Signal is %s (%d dBm). Below about -67 dBm, speed drops and calls stutter.", q, w.SignalDBm),
-				How:    "Move the router to a central, raised spot away from walls and metal, or add a mesh node / access point near where you work.",
-				Impact: "high",
-			})
+			sev := "medium"
+			if q == "weak" {
+				sev = "high"
+			}
+			s = append(s, warn("wifi-signal", sev, "Improve Wi-Fi signal",
+				fmt.Sprintf("Signal is %s (%d dBm). Below about -67 dBm, speed drops and calls stutter.", q, w.SignalDBm),
+				"Move the router to a central, raised spot away from walls and metal, or add a mesh node / access point near where you work."))
 		}
 	}
 	if c := r.Congestion; c != nil && c.BestChannel != 0 && c.OnMyChannel-c.BestCount >= 2 {
-		s = append(s, Suggestion{
-			Title:  fmt.Sprintf("Switch Wi-Fi channel to %d", c.BestChannel),
-			Why:    fmt.Sprintf("%d nearby networks share your channel's airtime; channel %d has %d.", c.OnMyChannel, c.BestChannel, c.BestCount),
-			How:    fmt.Sprintf("In the router admin page, set the %s channel to %d instead of 'Auto' (usually under Wireless settings).", c.Band, c.BestChannel),
-			Impact: "medium",
-		})
+		s = append(s, warn("wifi-channel", "medium", fmt.Sprintf("Switch Wi-Fi channel to %d", c.BestChannel),
+			fmt.Sprintf("%d nearby networks share your channel's airtime; channel %d has %d.", c.OnMyChannel, c.BestChannel, c.BestCount),
+			fmt.Sprintf("In the router admin page, set the %s channel to %d instead of 'Auto' (usually under Wireless settings).", c.Band, c.BestChannel)))
 	}
 	if g := r.Gateway; g != nil && g.Received > 0 && (g.JitterMs > 10 || g.MedianMs > 20 || g.LossPct > 2) {
-		s = append(s, Suggestion{
-			Title:  "Your Wi-Fi link to the router is unstable",
-			Why:    fmt.Sprintf("Router ping: median %.1f ms, jitter %.1f ms, %.0f%% loss. A healthy link is under 5 ms with little jitter.", g.MedianMs, g.JitterMs, g.LossPct),
-			How:    "Usually interference or distance: try 5 GHz, a quieter channel, or a cable for your desk.",
-			Impact: "medium",
-		})
+		s = append(s, warn("gateway-latency", "medium", "Your Wi-Fi link to the router is unstable",
+			fmt.Sprintf("Router ping: median %.1f ms, jitter %.1f ms, %.0f%% loss. A healthy link is under 5 ms with little jitter.", g.MedianMs, g.JitterMs, g.LossPct),
+			"Usually interference or distance: try 5 GHz, a quieter channel, or a cable for your desk."))
 	}
-	var sys *DNSResult
-	var best *DNSResult
-	for i := range r.DNS {
-		d := &r.DNS[i]
+	if f, ok := dnsFinding(r.DNS); ok {
+		s = append(s, f)
+	}
+	if b := r.Bufferbloat; b != nil && b.IncreaseMs >= 60 {
+		s = append(s, warn("bufferbloat", "high", "Fix bufferbloat (lag when someone downloads)",
+			fmt.Sprintf("Latency went up by %.0f ms during a download (grade %s). Video calls and games lag whenever the line is busy.", b.IncreaseMs, b.Grade),
+			"Turn on SQM, Smart Queue, 'QoS' or 'Adaptive QoS' in the router if it has it, set slightly below your plan speed."))
+	}
+	return s
+}
+
+func dnsFinding(results []DNSResult) (checks.Finding, bool) {
+	var sys, best *DNSResult
+	for i := range results {
+		d := &results[i]
 		if d.System {
 			sys = d
-			continue
-		}
-		if d.Failures < d.Queries && (best == nil || d.MedianMs < best.MedianMs) {
+		} else if d.Failures < d.Queries && (best == nil || d.MedianMs < best.MedianMs) {
 			best = d
 		}
 	}
-	if sys != nil && best != nil {
-		sysBroken := sys.Failures == sys.Queries
-		if sysBroken || (sys.MedianMs-best.MedianMs >= 15 && best.MedianMs < sys.MedianMs*0.7) {
-			why := fmt.Sprintf("Your DNS (%s) takes %.0f ms per lookup; %s (%s) takes %.0f ms. Every new website pays this.", sys.Server, sys.MedianMs, best.Name, best.Server, best.MedianMs)
-			if sysBroken {
-				why = fmt.Sprintf("Your DNS (%s) did not answer our test lookups; %s (%s) answered in %.0f ms.", sys.Server, best.Name, best.Server, best.MedianMs)
+	if sys == nil || best == nil {
+		return checks.Finding{}, false
+	}
+	sysBroken := sys.Failures == sys.Queries
+	if !sysBroken && (sys.MedianMs-best.MedianMs < 15 || best.MedianMs >= sys.MedianMs*0.7) {
+		return checks.Finding{}, false
+	}
+	why := fmt.Sprintf("Your DNS (%s) takes %.0f ms per lookup; %s (%s) takes %.0f ms. Every new website pays this.", sys.Server, sys.MedianMs, best.Name, best.Server, best.MedianMs)
+	if sysBroken {
+		why = fmt.Sprintf("Your DNS (%s) did not answer our test lookups; %s (%s) answered in %.0f ms.", sys.Server, best.Name, best.Server, best.MedianMs)
+	}
+	f := warn("dns-speed", "medium", "Change DNS to "+best.Name+" ("+best.Server+")", why,
+		"Set it once in the router's DHCP/DNS settings so every device benefits, or per device in network settings.")
+	for _, p := range PublicResolvers {
+		if p.IP == best.Server {
+			f.AutoFix = &checks.AutoFix{
+				ID:      "set-dns",
+				Summary: fmt.Sprintf("Switch this computer's DNS to %s (%s, %s). Other devices are not changed.", p.Name, p.IP, p.Secondary),
+				Args:    []string{p.IP, p.Secondary},
 			}
-			s = append(s, Suggestion{
-				Title:  "Change DNS to " + best.Name + " (" + best.Server + ")",
-				Why:    why,
-				How:    "Set it once in the router's DHCP/DNS settings so every device benefits, or per device in network settings.",
-				Impact: "medium",
-			})
 		}
 	}
-	if b := r.Bufferbloat; b != nil && b.IncreaseMs >= 60 {
-		s = append(s, Suggestion{
-			Title:  "Fix bufferbloat (lag when someone downloads)",
-			Why:    fmt.Sprintf("Latency went up by %.0f ms during a download (grade %s). Video calls and games lag whenever the line is busy.", b.IncreaseMs, b.Grade),
-			How:    "Turn on SQM, Smart Queue, 'QoS' or 'Adaptive QoS' in the router if it has it, set slightly below your plan speed.",
-			Impact: "high",
-		})
-	}
-	return s
+	return f, true
 }

@@ -2,6 +2,7 @@ package speed
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -89,9 +90,20 @@ func MeasureBufferbloat(ctx context.Context, target string, maxDur time.Duration
 	case <-time.After(1500 * time.Millisecond):
 	case <-ctx.Done():
 	}
-	loaded, _ := Ping(ctx, target, 20)
+	// Only pings sent while data is flowing count: stop pinging if the
+	// download ends early (200 MB cap on a fast line, or an error).
+	pctx, pcancel := context.WithCancel(ctx)
+	go func() { <-done; pcancel() }()
+	loaded, _ := Ping(pctx, target, 20)
+	if pctx.Err() != nil && ctx.Err() == nil {
+		loaded.Sent, loaded.LossPct = loaded.Received, 0 // unknown how many were cut off
+	}
+	pcancel()
 	cancel()
 	<-done
+	if loaded.Received < 3 {
+		return b, fmt.Errorf("the download ended before enough pings were measured under load")
+	}
 	el := end.Sub(start).Seconds() // done is closed, so end is set
 	b.Loaded = loaded
 	b.DownloadedMB = round1(float64(n.Load()) / 1e6)

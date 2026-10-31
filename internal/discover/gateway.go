@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -47,8 +48,14 @@ func DefaultGateway() (ip, iface string, err error) {
 			return "", "", err
 		}
 		ip, iface = ParseProcNetRoute(string(data))
+	case "windows":
+		out, err := exec.Command("route", "print", "-4", "0.0.0.0").Output()
+		if err != nil {
+			return "", "", fmt.Errorf("route print: %w", err)
+		}
+		ip, iface = ParseRoutePrint(string(out))
 	default:
-		return "", "", fmt.Errorf("%s is not supported yet (macOS and Linux only for now)", runtime.GOOS)
+		return "", "", fmt.Errorf("%s is not supported yet (macOS, Linux and Windows only)", runtime.GOOS)
 	}
 	if ip == "" {
 		return "", "", ErrNoGateway
@@ -123,6 +130,24 @@ func ParseProcNetRoute(data string) (ip, iface string) {
 	return ip, iface
 }
 
+// ParseRoutePrint parses Windows `route print -4 0.0.0.0` and returns the
+// default route with the lowest metric. iface is the local interface address.
+func ParseRoutePrint(out string) (ip, iface string) {
+	best := -1
+	for _, line := range strings.Split(out, "\n") {
+		f := strings.Fields(line)
+		if len(f) < 5 || f[0] != "0.0.0.0" || f[1] != "0.0.0.0" || net.ParseIP(f[2]) == nil {
+			continue // header, or "On-link"
+		}
+		metric, err := strconv.Atoi(f[4])
+		if err != nil || (best != -1 && metric >= best) {
+			continue
+		}
+		best, ip, iface = metric, f[2], f[3]
+	}
+	return ip, iface
+}
+
 var arpDarwinRe = regexp.MustCompile(`\(([0-9.]+)\) at ([0-9a-fA-F:]+)`)
 
 // LookupMAC reads the system ARP cache for ip. It sends no packets itself.
@@ -140,6 +165,12 @@ func LookupMAC(ip string) string {
 			return ""
 		}
 		return ParseProcNetArp(string(data), ip)
+	case "windows":
+		out, err := exec.Command("arp", "-a", ip).Output()
+		if err != nil {
+			return ""
+		}
+		return ParseArpWindows(string(out), ip)
 	}
 	return ""
 }
@@ -161,6 +192,17 @@ func ParseProcNetArp(data, ip string) string {
 		f := strings.Fields(sc.Text())
 		if len(f) >= 4 && f[0] == ip && f[3] != "00:00:00:00:00:00" {
 			return NormalizeMAC(f[3])
+		}
+	}
+	return ""
+}
+
+// ParseArpWindows parses Windows `arp -a <ip>` ("192.168.1.1  a4-2b-b0-aa-bb-cc  dynamic").
+func ParseArpWindows(out, ip string) string {
+	for _, line := range strings.Split(out, "\n") {
+		f := strings.Fields(line)
+		if len(f) >= 2 && f[0] == ip {
+			return NormalizeMAC(strings.ReplaceAll(f[1], "-", ":"))
 		}
 	}
 	return ""

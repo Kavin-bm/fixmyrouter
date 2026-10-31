@@ -39,9 +39,9 @@ func TestFreqAndIw(t *testing.T) {
 	if got := ParseIwDevInterfaces("phy#0\n\tInterface wlan0\n\t\ttype managed\n"); len(got) != 1 || got[0] != "wlan0" {
 		t.Fatalf("%v", got)
 	}
-	cur, near := ParseNmcli("*:36:5180 MHz:80\n :6:2437 MHz:40\n :149:5745 MHz:30\n")
-	if cur.Channel != 36 || len(near) != 2 || near[0].Band != "2.4GHz" {
-		t.Fatalf("%+v %+v", cur, near)
+	cur, sec, near := ParseNmcli("*:36:5180 MHz:80:WPA2\n :6:2437 MHz:40:WPA1 WPA2\n :149:5745 MHz:30:\n")
+	if cur.Channel != 36 || sec != "wpa2" || len(near) != 2 || near[0].Band != "2.4GHz" {
+		t.Fatalf("%+v %q %+v", cur, sec, near)
 	}
 }
 
@@ -71,7 +71,7 @@ func TestBloatGrade(t *testing.T) {
 	}
 }
 
-func TestSuggest(t *testing.T) {
+func TestFindings(t *testing.T) {
 	w, _ := ParseSPAirPort([]byte(spSample))
 	c, _ := Analyze(w)
 	r := &Report{
@@ -83,8 +83,11 @@ func TestSuggest(t *testing.T) {
 		},
 	}
 	got := map[string]bool{}
-	for _, s := range Suggest(r) {
-		got[s.Title] = true
+	for _, f := range Findings(r) {
+		got[f.Title] = true
+		if f.ID == "dns-speed" && (f.AutoFix == nil || f.AutoFix.Args[1] != "1.0.0.1") {
+			t.Errorf("dns finding should offer set-dns: %+v", f.AutoFix)
+		}
 	}
 	for _, want := range []string{"Use 5 GHz Wi-Fi", "Improve Wi-Fi signal", "Switch Wi-Fi channel to 1", "Change DNS to Cloudflare (1.1.1.1)"} {
 		if !got[want] {
@@ -93,5 +96,62 @@ func TestSuggest(t *testing.T) {
 	}
 	if got["Your Wi-Fi link to the router is unstable"] {
 		t.Error("gateway is healthy")
+	}
+}
+
+func TestSecurityMapping(t *testing.T) {
+	for in, want := range map[string]string{
+		"spairport_security_mode_none": "open", "spairport_security_mode_wpa2_personal": "wpa2",
+		"spairport_security_mode_wpa2_personal_mixed": "wpa-wpa2", "spairport_security_mode_wpa3_transition": "wpa2-wpa3",
+		"spairport_security_mode_wpa3_personal": "wpa3", "spairport_security_mode_wep": "wep",
+		"spairport_security_mode_wpa2_enterprise": "enterprise",
+	} {
+		if got := macSecurity(in); got != want {
+			t.Errorf("mac %s -> %s", in, got)
+		}
+	}
+	for in, want := range map[string]string{"": "open", "WEP": "wep", "WPA1": "wpa", "WPA2 WPA3": "wpa2-wpa3", "WPA2 802.1X": "enterprise"} {
+		if got := nmcliSecurity(in); got != want {
+			t.Errorf("nmcli %q -> %s", in, got)
+		}
+	}
+}
+
+const netshIf = "\r\nThere is 1 interface on the system:\r\n\r\n" +
+	"    Name                   : Wi-Fi\r\n" +
+	"    State                  : connected\r\n" +
+	"    SSID                   : Home\r\n" +
+	"    AP BSSID               : 9c:53:22:aa:bb:01\r\n" +
+	"    Band                   : 2.4 GHz\r\n" +
+	"    Channel                : 6\r\n" +
+	"    Radio type             : 802.11n\r\n" +
+	"    Authentication         : WPA2-Personal\r\n" +
+	"    Cipher                 : CCMP\r\n" +
+	"    Receive rate (Mbps)    : 144.4\r\n" +
+	"    Signal                 : 60%\r\n"
+
+const netshNets = "SSID 1 : Home\r\n    Network type            : Infrastructure\r\n" +
+	"    BSSID 1                 : 9c:53:22:aa:bb:01\r\n         Signal             : 60%\r\n         Channel            : 6\r\n" +
+	"SSID 2 : Neighbour\r\n    BSSID 1                 : 00:11:22:33:44:55\r\n         Channel            : 1\r\n" +
+	"    BSSID 2                 : 00:11:22:33:44:56\r\n         Channel            : 36\r\n"
+
+func TestNetsh(t *testing.T) {
+	w, ok := ParseNetshInterfaces(netshIf)
+	if !ok || w.Channel != 6 || w.Band != "2.4GHz" || w.SignalDBm != -70 || w.Security != "wpa2" || w.TxRateMbps != 144 || w.bssid != "9c:53:22:aa:bb:01" {
+		t.Fatalf("%+v ok=%v", w, ok)
+	}
+	near := ParseNetshNetworks(netshNets, w.bssid)
+	if len(near) != 2 || near[0].Channel != 1 || near[1].Band != "5GHz" {
+		t.Fatalf("own AP must be skipped: %+v", near)
+	}
+	if _, ok := ParseNetshInterfaces("There is 1 interface on the system:\r\n    State : disconnected\r\n"); ok {
+		t.Fatal("disconnected should not be ok")
+	}
+}
+
+func TestWindowsPingParse(t *testing.T) {
+	out := "Reply from 192.168.1.1: bytes=32 time=3ms TTL=64\r\nReply from 192.168.1.1: bytes=32 time<1ms TTL=64\r\nRequest timed out.\r\n"
+	if s := ParsePing(out, "192.168.1.1", 3); s.Received != 2 || s.MaxMs != 3 {
+		t.Fatalf("%+v", s)
 	}
 }

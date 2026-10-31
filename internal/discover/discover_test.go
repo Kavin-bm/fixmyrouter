@@ -65,3 +65,23 @@ func TestIsPrivate(t *testing.T) {
 		}
 	}
 }
+
+func TestParseRoutePrintWindows(t *testing.T) {
+	out := "===========================================================================\r\n" +
+		"IPv4 Route Table\r\n" +
+		"===========================================================================\r\n" +
+		"Active Routes:\r\n" +
+		"Network Destination        Netmask          Gateway       Interface  Metric\r\n" +
+		"          0.0.0.0          0.0.0.0         On-link     10.8.0.2      5\r\n" +
+		"          0.0.0.0          0.0.0.0      192.168.1.1    192.168.1.23     35\r\n" +
+		"          0.0.0.0          0.0.0.0      192.168.0.1    192.168.0.50     50\r\n" +
+		"===========================================================================\r\n"
+	ip, iface := ParseRoutePrint(out)
+	if ip != "192.168.1.1" || iface != "192.168.1.23" {
+		t.Fatalf("got %q %q", ip, iface)
+	}
+	arp := "\r\nInterface: 192.168.1.23 --- 0xc\r\n  Internet Address      Physical Address      Type\r\n  192.168.1.1           a4-2b-b0-aa-bb-cc     dynamic   \r\n"
+	if got := ParseArpWindows(arp, "192.168.1.1"); got != "a4:2b:b0:aa:bb:cc" {
+		t.Fatalf("arp %q", got)
+	}
+}

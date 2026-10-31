@@ -23,10 +23,10 @@ type DNSResult struct {
 }
 
 // PublicResolvers compared against your current DNS.
-var PublicResolvers = []struct{ Name, IP string }{
-	{"Cloudflare", "1.1.1.1"},
-	{"Google", "8.8.8.8"},
-	{"Quad9", "9.9.9.9"},
+var PublicResolvers = []struct{ Name, IP, Secondary string }{
+	{"Cloudflare", "1.1.1.1", "1.0.0.1"},
+	{"Google", "8.8.8.8", "8.8.4.4"},
+	{"Quad9", "9.9.9.9", "149.112.112.112"},
 }
 
 // Popular names: answers are usually cached by every resolver, so this
@@ -36,10 +36,17 @@ var testDomains = []string{"google.com", "youtube.com", "wikipedia.org", "github
 // SystemResolvers returns the DNS servers this machine is using.
 func SystemResolvers() []string {
 	var out []string
-	if runtime.GOOS == "darwin" {
+	switch runtime.GOOS {
+	case "darwin":
 		if b, err := exec.Command("scutil", "--dns").Output(); err == nil {
 			out = ParseScutilDNS(string(b))
 		}
+	case "windows":
+		ps := "Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses"
+		if b, err := exec.Command("powershell", "-NoProfile", "-Command", ps).Output(); err == nil {
+			out = strings.Fields(string(b))
+		}
+		return out
 	}
 	if len(out) == 0 {
 		if b, err := os.ReadFile("/etc/resolv.conf"); err == nil {

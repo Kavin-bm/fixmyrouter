@@ -75,3 +75,36 @@ func TestUPnPFinding(t *testing.T) {
 		t.Fatalf("igd: %+v", f)
 	}
 }
+
+func TestScore(t *testing.T) {
+	fs := []Finding{
+		{Status: StatusFail, Severity: "high"},
+		{Status: StatusWarn, Severity: "medium"},
+		{Status: StatusPass, Severity: "info"},
+		{Status: StatusError, Severity: "high"},
+	}
+	if got := Score(fs); got != 63 {
+		t.Fatalf("score %d", got)
+	}
+	if Score(nil) != 100 || Grade(100) != "Great" || Grade(63) != "Needs work" {
+		t.Fatal("empty score or grade")
+	}
+	many := make([]Finding, 10)
+	for i := range many {
+		many[i] = Finding{Status: StatusFail, Severity: "high"}
+	}
+	if Score(many) != 0 {
+		t.Fatal("score must not go below 0")
+	}
+}
+
+func TestWiFiSecurity(t *testing.T) {
+	for mode, want := range map[string]string{
+		SecOpen: StatusFail, SecWEP: StatusFail, SecWPA: StatusWarn, SecWPAWPA2: StatusWarn,
+		SecWPA2: StatusPass, SecWPA3: StatusPass, "": StatusError,
+	} {
+		if f := WiFiSecurity(mode); f.Status != want {
+			t.Errorf("%q: got %s", mode, f.Status)
+		}
+	}
+}

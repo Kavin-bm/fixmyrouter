@@ -5,6 +5,7 @@ import (
 	"math"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"time"
@@ -25,11 +26,17 @@ type PingStats struct {
 
 var timeRe = regexp.MustCompile(`time[=<]([0-9.]+) ?ms`)
 
-// Ping runs the system ping (no root needed) count times, 0.2 s apart.
+// Ping runs the system ping (no root needed) count times, 0.2 s apart
+// (1 s apart on Windows, which has no interval flag).
 func Ping(ctx context.Context, target string, count int) (PingStats, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(count)*300*time.Millisecond+5*time.Second)
+	args := []string{"-c", strconv.Itoa(count), "-i", "0.2", target}
+	gap := 300 * time.Millisecond
+	if runtime.GOOS == "windows" {
+		args, gap = []string{"-n", strconv.Itoa(count), "-w", "1000", target}, 1100*time.Millisecond
+	}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(count)*gap+5*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, "ping", "-c", strconv.Itoa(count), "-i", "0.2", target).Output()
+	out, err := exec.CommandContext(ctx, "ping", args...).Output()
 	if len(out) == 0 && err != nil {
 		return PingStats{Target: target, Sent: count, LossPct: 100}, err
 	}
