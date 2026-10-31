@@ -15,12 +15,12 @@
    - Later: WPS enabled, remote management on the WAN side, DNS hijack (unknown resolvers), firmware age if the profile has it, Wi-Fi security mode (WEP/WPA/WPA2/WPA3), other open LAN-side ports.
    - Default-credential or password checks are a **non-goal**: fixmyrouter never sends credentials to any login form, default or otherwise.
 4. **Report:** terminal and JSON today; Markdown report later.
-5. **Fix (opt-in, coming soon):** for models with a profile, apply each suggestion (channel, DNS, QoS, UPnP off...) one at a time after a yes. Snapshot the old setting first.
-6. **Undo (coming soon):** `fixmyrouter undo` restores every snapshot from `~/.fixmyrouter/`.
+5. **Fix (opt-in):** `fixmyrouter fix` applies changes on *this computer* after a yes, with a snapshot first (today: DNS on macOS). Router settings are never changed automatically, because that would mean logging in to the router; profiles give exact manual steps instead.
+6. **Undo:** `fixmyrouter undo` restores snapshots from `~/.fixmyrouter/changes.json` (`--all` for every change).
 7. For unsupported models, the report gives step-by-step manual instructions.
 
 ## Agent mode
-`PROMPT.md` tells a coding agent how to run `fixmyrouter speed --json` and `audit --json`, explain the results to a non-technical person, ask before running `--load`, and never change settings itself. Later the binary also exposes the same functions as an MCP server (`fixmyrouter mcp`, coming soon).
+`PROMPT.md` tells a coding agent how to run `fixmyrouter check --json`, explain the results to a non-technical person, ask before `--load` and before every fix. `fixmyrouter mcp` exposes the same functions as MCP tools; `apply_fix` refuses unless the agent confirms the person said yes.
 
 ## Repo layout
 ```
@@ -29,22 +29,20 @@ fixmyrouter/
   internal/discover/      gateway, OUI, fingerprint
   internal/speed/         Wi-Fi info, congestion, ping, DNS, bufferbloat, suggestions
   internal/checks/        security checks, one file per check
-  internal/profiles/      loader for model profiles (coming soon)
-  internal/fix/           apply and undo with snapshots (coming soon)
+  internal/run/           one entry point shared by CLI, UI and MCP
+  internal/fix/           plan, apply and undo with snapshots
   internal/report/        terminal and JSON output
-  internal/mcp/           MCP server (coming soon)
-  profiles/               YAML per router model (community PRs)
+  internal/mcp/           MCP server
+  internal/ui/            local web UI (go:embed)
+  profiles/               YAML per router model + loader and validator (community PRs)
   PROMPT.md               paste-into-your-agent installer
   README.md, CONTRIBUTING.md, LICENSE (MIT)
 ```
 
 ## Milestones
-- **M0 (day 1):** repo, license, README, `discover`, `speed` (Wi-Fi info, congestion, gateway ping, DNS, opt-in bufferbloat, suggestions), `audit` with 3 security checks. *(done)*
-- **M1 (days 2-3):** calibrate speed thresholds on real homes (Kavin's family routers), Markdown report, before/after compare (`speed --save` / `speed --compare`), 3 more security checks.
-- **M2 (days 4-5):** profile format and loader, 3 router profiles (e.g. TP-Link, JioFiber, Airtel) covering channel, DNS, QoS and UPnP settings; `fix` and `undo` with snapshots.
-- **M3 (day 6):** MCP server, demo GIF, before/after screenshots of a real speed improvement.
-- **M4 (day 7):** release binaries (Mac/Linux/Windows) via GoReleaser, Windows Wi-Fi info via `netsh wlan`.
-- **Launch:** a personal-story post on X with a before/after speed report ("my parents' Wi-Fi went from X to Y"), plus a Show HN. Ask for router model PRs in the same post.
+- **M0-M3 (done, see CHANGELOG):** discover, speed, audit, `check` with a 0-100 score, JSON and exit codes, Windows parsers, DNS fix with snapshot/undo (macOS), local UI, MCP server, profile loader and validator, GoReleaser, install script.
+- **Next:** first tagged release (Homebrew tap, curl installer, Windows zip); real runs on Linux and Windows; DNS fix on Linux/Windows; upload bufferbloat; WPS / WAN remote admin / firmware age; 20+ verified profiles.
+- **Launch:** a personal-story post on X with a real before/after, plus a Show HN (drafts in LAUNCH.md). Ask for router profile PRs in the same post.
 
 ## Risks
 - Speed advice can be wrong (e.g. the "neighbours" are the user's own mesh nodes, or DFS channels). Keep suggestions conservative and explain why.
