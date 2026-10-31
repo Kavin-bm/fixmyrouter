@@ -23,8 +23,10 @@ import (
 	"time"
 
 	"github.com/Kavin-bm/fixmyrouter/internal/checks"
+	"github.com/Kavin-bm/fixmyrouter/internal/diagnose"
 	"github.com/Kavin-bm/fixmyrouter/internal/discover"
 	"github.com/Kavin-bm/fixmyrouter/internal/fix"
+	"github.com/Kavin-bm/fixmyrouter/internal/isp"
 	"github.com/Kavin-bm/fixmyrouter/internal/report"
 	"github.com/Kavin-bm/fixmyrouter/internal/run"
 )
@@ -38,6 +40,32 @@ type Server struct {
 	Token   string
 	Addr    string // host:port we listen on, for the Host check
 	busy    sync.Mutex
+
+	// Prober, Sleep and Settle are swapped in tests (nil/zero = real network).
+	Prober diagnose.Prober
+	Sleep  isp.Sleep
+	Settle *time.Duration
+}
+
+func (s *Server) prober() diagnose.Prober {
+	if s.Prober != nil {
+		return s.Prober
+	}
+	return diagnose.Real{}
+}
+
+func (s *Server) sleep() isp.Sleep {
+	if s.Sleep != nil {
+		return s.Sleep
+	}
+	return isp.RealSleep
+}
+
+func (s *Server) settle() time.Duration {
+	if s.Settle != nil {
+		return *s.Settle
+	}
+	return 3 * time.Second
 }
 
 // New returns a server with a fresh random token.
@@ -97,6 +125,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.fix(w, r, false)
 	case "POST /api/fix/apply":
 		s.fix(w, r, true)
+	case "POST /api/diagnose":
+		s.diagnose(w, r)
+	case "POST /api/fix/preview":
+		s.preview(w, r)
+	case "POST /api/fix/measure":
+		s.measure(w, r)
+	case "POST /api/report/isp":
+		s.ispReport(w, r)
 	case "POST /api/undo":
 		s.undo(w, r)
 	default:
@@ -136,6 +172,8 @@ type state struct {
 	Previous *report.Audit `json:"previous"`
 	Scores   []score       `json:"scores"`
 	Changes  []fix.Change  `json:"changes"`
+	// Diagnosis is the latest `diagnose` result, if any.
+	Diagnosis *diagnose.Diagnosis `json:"diagnosis"`
 }
 
 type score struct {
@@ -158,6 +196,7 @@ func (s *Server) state(w http.ResponseWriter) {
 		st.Latest = &runs[n-1]
 		st.Previous = run.Previous(st.Latest)
 	}
+	st.Diagnosis = diagnose.Latest()
 	st.Changes, err = fix.History()
 	if st.Changes == nil {
 		st.Changes = []fix.Change{}

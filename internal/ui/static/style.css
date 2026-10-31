@@ -95,3 +95,24 @@ footer { text-align: center; padding: 8px 16px 32px; font-size: 13px; }
   .gauge-wrap { width: 160px; height: 160px; }
 }
 @media (prefers-reduced-motion: reduce) { .arc { transition: none; } }
+.opts { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; margin-top: 8px; }
+.opts label { display: inline-flex; gap: 8px; align-items: center; }
+.opts input[type="number"] { width: 80px; font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+.verdict-text { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+.verdict.healthy .verdict-text, .verdict-text.good { color: var(--pass); }
+.bottleneck { border: 1px solid var(--border); border-left: 4px solid var(--warn); border-radius: 10px; padding: 12px 14px; background: var(--surface-2); margin-top: 12px; }
+.bottleneck.main { border-left-color: var(--fail); }
+.bottleneck h3 { font-size: 16px; margin: 0; }
+.bottleneck p { margin: 6px 0 0; }
+.evidence { margin: 8px 0 0; padding-left: 18px; font-size: 14px; }
+.fixes h4 { margin: 12px 0 6px; font-size: 14px; }
+details.fix { border-top: 1px solid var(--border); padding: 8px 0; }
+details.fix summary { cursor: pointer; }
+details.fix ol { margin: 8px 0; padding-left: 22px; font-size: 14px; }
+.badge.level-auto { color: var(--pass); } .badge.level-router { color: var(--info); }
+.badge.level-guided { color: var(--warn); } .badge.level-advice { color: var(--muted); }
+.notes { font-size: 13px; margin: 12px 0 0; padding-left: 18px; }
+.small { font-size: 13px; }
+table.ba { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.ba th, table.ba td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+table.ba tr.better td:last-child { color: var(--pass); } table.ba tr.worse td:last-child { color: var(--fail); }

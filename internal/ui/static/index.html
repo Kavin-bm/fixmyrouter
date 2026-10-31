@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%234ade80'/%3E%3C/svg%3E">
 </head>
 <body>
-<a class="skip" href="#findings">Skip to findings</a>
+<a class="skip" href="#verdict">Skip to the verdict</a>
 <header class="top">
   <div class="brand"><span class="dot" aria-hidden="true"></span>fixmyrouter</div>
   <div class="top-right">
@@ -19,6 +19,47 @@
 </header>
 
 <main>
+  <section class="card diag" aria-labelledby="diag-title">
+    <h1 id="diag-title">Why is my internet slow?</h1>
+    <p class="muted">Finds the main bottleneck (Wi-Fi, lag under load, DNS, the router or your internet provider), fixes what can be fixed on your side, and measures before and after. It can't make your provider's line faster; if that is the problem, it gives you evidence to send them.</p>
+    <div class="opts">
+      <label><input id="d-throughput" type="checkbox"> Download speed test <span class="muted">(up to 25 MB from speed.cloudflare.com)</span></label>
+      <label><input id="d-load" type="checkbox"> Lag-under-load test <span class="muted">(up to 200 MB)</span></label>
+      <label>Your plan <input id="d-plan" type="number" min="0" step="1" inputmode="numeric" placeholder="Mbps" aria-label="Plan download speed in Mbps"> <span class="muted">Mbps (optional)</span></label>
+    </div>
+    <div class="actions"><button id="diagnose" class="primary" type="button">Diagnose</button></div>
+    <p id="d-status" class="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section id="verdict" class="card verdict" aria-labelledby="verdict-title" hidden>
+    <h2 id="verdict-title">Verdict</h2>
+    <p id="verdict-text" class="verdict-text"></p>
+    <p id="verdict-when" class="muted"></p>
+    <div id="bottlenecks"></div>
+    <ul id="notes" class="notes muted"></ul>
+  </section>
+
+  <section id="beforeafter" class="card" aria-labelledby="ba-title" hidden>
+    <h2 id="ba-title">Before and after</h2>
+    <p id="ba-action" class="muted"></p>
+    <table class="ba"><thead><tr><th scope="col">Measurement</th><th scope="col">Before</th><th scope="col">After</th><th scope="col">Change</th></tr></thead><tbody id="ba-rows"></tbody></table>
+    <p class="muted small">Changes smaller than normal measurement noise are not counted as better or worse.</p>
+    <p id="ba-verdict" class="verdict-text"></p>
+    <div id="ba-undo" class="actions"></div>
+  </section>
+
+  <section class="card" aria-labelledby="isp-title">
+    <h2 id="isp-title">Report for your internet provider</h2>
+    <p class="muted">Measures several times and saves a timestamped report (Markdown and JSON) showing whether your home network was healthy while the internet was slow.</p>
+    <div class="opts">
+      <label>Samples <input id="r-samples" type="number" min="1" max="10" value="3"></label>
+      <label>Every <input id="r-interval" type="number" min="10" value="60"> seconds</label>
+      <label><input id="r-nodl" type="checkbox"> Skip download test <span class="muted">(pings and DNS only)</span></label>
+    </div>
+    <div class="actions"><button id="isp-report" class="secondary" type="button">Create report</button></div>
+    <p id="r-status" class="status" role="status" aria-live="polite"></p>
+  </section>
+
   <section class="hero card" aria-labelledby="score-title">
     <div class="gauge-wrap">
       <svg class="gauge" viewBox="0 0 120 120" role="img" aria-labelledby="score-title score-label">
@@ -81,6 +122,23 @@
     </div>
   </form>
 </dialog>
+<dialog id="fix-confirm" aria-labelledby="fix-title">
+  <form method="dialog">
+    <h2 id="fix-title">Apply this fix?</h2>
+    <p id="fix-summary"></p>
+    <dl class="plan">
+      <dt>Network</dt><dd id="fix-service"></dd>
+      <dt>Before</dt><dd id="fix-before"></dd>
+      <dt>After</dt><dd id="fix-after"></dd>
+    </dl>
+    <p class="muted">fixmyrouter saves a snapshot first, applies the change, then measures again with the same tests and shows the difference. Undo any time here or with <code>fixmyrouter undo</code>.</p>
+    <div class="actions">
+      <button value="cancel" class="secondary">Cancel</button>
+      <button value="yes" class="primary">Yes, apply and measure</button>
+    </div>
+  </form>
+</dialog>
 <script src="app.js"></script>
+<script src="solve.js"></script>
 </body>
 </html>

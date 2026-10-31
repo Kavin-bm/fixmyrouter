@@ -251,6 +251,7 @@ async function load() {
       renderMeasurements(st.latest.speed);
       renderFindings(st.latest);
     }
+    if (typeof renderDiagnosis === "function") renderDiagnosis(st.diagnosis);
     renderHistory(st.scores);
     renderChanges(st.changes);
   } catch (e) {
