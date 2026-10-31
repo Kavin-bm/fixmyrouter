@@ -39,6 +39,8 @@ func TestParseRejects(t *testing.T) {
 		"credentials":    strings.Replace(good, "A > B", "A > B (login: admin / password: admin)", 1),
 		"missing vendor": strings.Replace(good, "vendor: X\n", "", 1),
 		"no match":       strings.Replace(good, "[XYZ-100]", "[]", 1),
+		"unknown driver": good + "router_fix:\n  driver: telnet-root\n  settings: [sqm_qos]\n",
+		"driver setting": good + "router_fix:\n  driver: openwrt-ubus\n  settings: [upnp]\n",
 	} {
 		if _, err := Parse(name, []byte(bad)); err == nil {
 			t.Errorf("%s: accepted", name)
@@ -71,5 +73,22 @@ func TestSchemaInSync(t *testing.T) {
 	sort.Strings(want)
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("schema.json settings %v != Go %v", got, want)
+	}
+}
+
+func TestRouterFixProfile(t *testing.T) {
+	p := Find("OpenWrt - LuCI", "")
+	if p == nil || p.RouterFix == nil || p.RouterFix.Driver != "openwrt-ubus" {
+		t.Fatalf("openwrt profile: %+v", p)
+	}
+	if !p.CanRouterFix("sqm_qos") || p.CanRouterFix("upnp") {
+		t.Fatal("CanRouterFix wrong")
+	}
+	if (&Profile{}).CanRouterFix("sqm_qos") || (*Profile)(nil).CanRouterFix("sqm_qos") {
+		t.Fatal("profile without router_fix must not allow router changes")
+	}
+	tp := Find("Archer C6", "")
+	if tp.CanRouterFix("wifi_channel_2g") {
+		t.Fatal("TP-Link profile has no driver; must be guided only")
 	}
 }

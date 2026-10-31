@@ -31,6 +31,16 @@
         "https_supported": { "type": "boolean" }
       }
     },
+    "router_fix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["driver", "settings"],
+      "description": "Optional. Lets `fixmyrouter router apply` change these settings on the router after a yes, with a snapshot and undo. Only built-in drivers.",
+      "properties": {
+        "driver": { "type": "string", "enum": ["openwrt-ubus"] },
+        "settings": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["wifi_channel_2g", "wifi_channel_5g", "sqm_qos"] } }
+      }
+    },
     "settings": {
       "type": "object",
       "minProperties": 1,

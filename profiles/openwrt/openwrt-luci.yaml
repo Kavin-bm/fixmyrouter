@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../schema.json
+# Any router running OpenWrt with the LuCI web interface (OpenWrt 21.02 or newer).
+# Menu paths from the OpenWrt documentation (openwrt.org/docs/guide-user).
+# router_fix uses OpenWrt's documented ubus JSON-RPC API (/ubus) after the
+# person types their admin password. Not yet checked on a real device: if you
+# run OpenWrt, please test `fixmyrouter router plan` and report back.
+vendor: OpenWrt
+model: LuCI (any device)
+firmware_tested: "not device-tested yet (written for OpenWrt 21.02+)"
+isp_branded: false
+contributed_by: kavinbm
+verified: false
+source: "openwrt.org user guide: wireless, SQM (luci-app-sqm), DHCP and DNS"
+
+match:
+  http_title_contains: ["LuCI", "OpenWrt"]
+  http_server_contains: []
+
+admin:
+  url: http://192.168.1.1/
+  https_supported: false
+
+router_fix:
+  driver: openwrt-ubus
+  settings: [wifi_channel_2g, wifi_channel_5g, sqm_qos]
+
+settings:
+  wifi_channel_2g:
+    menu_path: "Network > Wireless > (2.4 GHz radio) Edit > Device Configuration > Operating frequency > Channel"
+    notes: "Prefer 1, 6 or 11. Save & Apply."
+  wifi_channel_5g:
+    menu_path: "Network > Wireless > (5 GHz radio) Edit > Device Configuration > Operating frequency > Channel"
+    notes: "Save & Apply."
+  band_steering:
+    menu_path: "n/a"
+    notes: "Stock OpenWrt has no band steering; give the 5 GHz network its own name instead."
+  dns_servers:
+    menu_path: "Network > Interfaces > lan > Edit > DHCP Server > Advanced Settings > DHCP-Options"
+    notes: "Add 6,<primary>,<secondary> (option 6 is DNS servers)."
+  sqm_qos:
+    menu_path: "Network > SQM QoS"
+    notes: "Install luci-app-sqm first (System > Software). Choose your WAN interface, set download and upload to about 90% of your measured speed, queue discipline cake, script piece_of_cake.qos."
+  upnp:
+    menu_path: "Services > UPnP IGD & PCP"
+    notes: "Only present if luci-app-upnp is installed."
+  https_admin:
+    menu_path: "System > Software > install luci-ssl"
+  wps:
+    menu_path: "n/a"
+  remote_management:
+    menu_path: "Network > Firewall > Zones (wan input should be reject)"
+  wifi_security:
+    menu_path: "Network > Wireless > Edit > Interface Configuration > Wireless Security > Encryption"
+    notes: "Choose WPA2-PSK (CCMP) or WPA3-SAE."

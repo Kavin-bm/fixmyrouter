@@ -31,7 +31,30 @@ type Profile struct {
 	Match           Match              `yaml:"match" json:"match"`
 	Admin           Admin              `yaml:"admin" json:"admin"`
 	Settings        map[string]Setting `yaml:"settings" json:"settings"`
-	File            string             `yaml:"-" json:"file"`
+	// RouterFix, if set, lets `fixmyrouter router apply` change these settings
+	// on the router itself, after a yes, with a snapshot and undo. Only drivers
+	// built into fixmyrouter are allowed, and the person types the admin
+	// password each time (never stored, never guessed).
+	RouterFix *RouterFix `yaml:"router_fix,omitempty" json:"router_fix,omitempty"`
+	File      string     `yaml:"-" json:"file"`
+}
+
+// RouterFix names a built-in driver and the settings it may change.
+type RouterFix struct {
+	Driver   string   `yaml:"driver" json:"driver"`
+	Settings []string `yaml:"settings" json:"settings"`
+}
+
+// RouterDrivers lists the built-in router drivers and the settings each can
+// change. Keep in sync with internal/routerfix and schema.json.
+var RouterDrivers = map[string][]string{
+	"openwrt-ubus": {"wifi_channel_2g", "wifi_channel_5g", "sqm_qos"},
+}
+
+// CanRouterFix reports whether this profile allows an automatic router-side
+// change of setting.
+func (p *Profile) CanRouterFix(setting string) bool {
+	return p != nil && p.RouterFix != nil && contains(p.RouterFix.Settings, setting)
 }
 
 // Match says how to recognise the router from `fixmyrouter discover`.
@@ -96,6 +119,20 @@ func Parse(name string, data []byte) (Profile, error) {
 		}
 		need(s.MenuPath, "settings."+k+".menu_path")
 	}
+	if rf := p.RouterFix; rf != nil {
+		supported, ok := RouterDrivers[rf.Driver]
+		if !ok {
+			errs = append(errs, fmt.Sprintf("router_fix.driver %q is not a built-in driver", rf.Driver))
+		}
+		if len(rf.Settings) == 0 {
+			errs = append(errs, "router_fix.settings is empty")
+		}
+		for _, k := range rf.Settings {
+			if ok && !contains(supported, k) {
+				errs = append(errs, fmt.Sprintf("router_fix: driver %s cannot change %q", rf.Driver, k))
+			}
+		}
+	}
 	if secretRe.Match(data) {
 		errs = append(errs, "looks like it contains a username or password; profiles must never include credentials")
 	}
@@ -154,6 +191,10 @@ func Find(title, server string) *Profile {
 	}
 	return nil
 }
+
+// SettingFor maps a finding ID (and, for channels, its title) to the profile
+// setting that fixes it, or "".
+func SettingFor(findingID, title string) string { return settingFor(findingID, title) }
 
 // settingFor maps a finding to the profile setting that fixes it.
 func settingFor(findingID, title string) string {
