@@ -30,6 +30,7 @@ const (
 	MetricSignal       = "signal_dbm"
 	MetricNeighbours   = "neighbours"
 	MetricGatewayLossP = "gateway_loss_pct"
+	MetricLinkRate     = "wifi_link_mbps"
 )
 
 // Action is one way to fix a bottleneck.
@@ -70,8 +71,8 @@ func Actions(b *Bottleneck, m Measurements, p *profiles.Profile, goos string) []
 		case "wifi-channel":
 			channelActions(add, r, p)
 		case "wifi-band":
-			guided(add, p, "band_steering", "wifi-band-steering", "Turn on band steering so devices pick 5 GHz", MetricSignal)
-			add(Action{ID: "wifi-join-5g", Level: LevelAdvice, Title: "Connect to the 5 GHz network", Metric: MetricDownload, Steps: []string{
+			guided(add, p, "band_steering", "wifi-band-steering", "Turn on band steering so devices pick 5 GHz", MetricLinkRate)
+			add(Action{ID: "wifi-join-5g", Level: LevelAdvice, Title: "Connect to the 5 GHz network", Metric: MetricLinkRate, Command: "fixmyrouter fix --measure wifi-join-5g", Steps: []string{
 				"Open this device's Wi-Fi list and pick the network with 5G or 5GHz in its name (same password as usual).",
 				"If there is only one name, your router mixes both bands: turn on band steering, or give the 5 GHz band its own name in the router's wireless settings.",
 				"5 GHz is faster and less crowded, but reaches less far through walls: if the signal drops below about -70 dBm, stay on 2.4 GHz in that room.",

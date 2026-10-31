@@ -45,10 +45,11 @@ var metricDefs = map[string]metricDef{
 	MetricLoaded:       {"Latency under load", "ms", false, 10, 15},
 	MetricDownload:     {"Download speed", "Mbps", true, 2, 10},
 	MetricSignal:       {"Wi-Fi signal", "dBm", true, 3, 0},
+	MetricLinkRate:     {"Wi-Fi link rate", "Mbps", true, 10, 15},
 	MetricNeighbours:   {"Neighbours on your channel", "", false, 1, 0},
 }
 
-var metricOrder = []string{MetricDNS, MetricLoaded, MetricDownload, MetricWAN, MetricWANLoss, MetricGateway, MetricGatewayJit, MetricGatewayLossP, MetricSignal, MetricNeighbours}
+var metricOrder = []string{MetricDNS, MetricLoaded, MetricDownload, MetricWAN, MetricWANLoss, MetricGateway, MetricGatewayJit, MetricGatewayLossP, MetricSignal, MetricLinkRate, MetricNeighbours}
 
 // Values extracts comparable numbers from a diagnosis.
 func Values(d *Diagnosis) map[string]float64 {
@@ -68,6 +69,9 @@ func Values(d *Diagnosis) map[string]float64 {
 		}
 		if w := r.WiFi; w != nil && w.SignalDBm != 0 {
 			v[MetricSignal] = float64(w.SignalDBm)
+		}
+		if w := r.WiFi; w != nil && w.TxRateMbps > 0 {
+			v[MetricLinkRate] = float64(w.TxRateMbps)
 		}
 		if c := r.Congestion; c != nil {
 			v[MetricNeighbours] = float64(c.OnMyChannel)
