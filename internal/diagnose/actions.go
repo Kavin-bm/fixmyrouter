@@ -189,6 +189,14 @@ func dnsActions(add func(Action), r *speed.Report, p *profiles.Profile, goos str
 	}
 }
 
+// routerNote warns when a router fix comes from a profile nobody has tested on a real device.
+func routerNote(p *profiles.Profile) []string {
+	if p != nil && !p.Verified {
+		return []string{"Unverified profile: the " + modelName(p) + " driver is tested against a simulated router only, not a real device yet. You can undo it, but check the result."}
+	}
+	return nil
+}
+
 func channelActions(add func(Action), r *speed.Report, p *profiles.Profile) {
 	c := r.Congestion
 	if c == nil || c.BestChannel == 0 {
@@ -203,7 +211,7 @@ func channelActions(add func(Action), r *speed.Report, p *profiles.Profile) {
 	if p.CanRouterFix(key) {
 		add(Action{ID: "router-" + key, Level: LevelRouter, Title: title + " (fixmyrouter does it on the router)", Metric: MetricNeighbours,
 			RouterSetting: key, RouterValue: val, Command: "fixmyrouter router apply " + key + " " + val,
-			Steps: []string{"Shows the exact change first, asks for your router admin password (used once, never stored), saves a snapshot, then changes the channel. `fixmyrouter router undo` restores it."}})
+			Steps: append([]string{"Shows the exact change first, asks for your router admin password (used once, never stored), saves a snapshot, then changes the channel. `fixmyrouter router undo` restores it."}, routerNote(p)...)})
 	}
 	guided(add, p, key, "guided-"+key, title, MetricNeighbours, fmt.Sprintf("Choose channel %d instead of Auto.", c.BestChannel))
 	add(Action{ID: "channel-advice", Level: LevelAdvice, Title: title, Metric: MetricNeighbours, Command: "fixmyrouter fix --measure channel-advice", Steps: []string{
@@ -224,7 +232,7 @@ func sqmActions(add func(Action), m Measurements, p *profiles.Profile) {
 		val := fmt.Sprintf("%.0f", target)
 		add(Action{ID: "router-sqm_qos", Level: LevelRouter, Title: "Turn on SQM (smart queue) on the router", Metric: MetricLoaded,
 			RouterSetting: "sqm_qos", RouterValue: val, Command: "fixmyrouter router apply sqm_qos " + val + "/UPLOAD_MBPS",
-			Steps: []string{"Replace UPLOAD_MBPS with about 90% of your plan's upload (or leave it as " + val + " to shape download only).", "Shows the exact change first, asks for your router admin password (used once, never stored), saves a snapshot. `fixmyrouter router undo` restores it."}})
+			Steps: append([]string{"Replace UPLOAD_MBPS with about 90% of your plan's upload (or leave it as " + val + " to shape download only).", "Shows the exact change first, asks for your router admin password (used once, never stored), saves a snapshot. `fixmyrouter router undo` restores it."}, routerNote(p)...)})
 	}
 	guided(add, p, "sqm_qos", "guided-sqm", "Turn on QoS / smart queue", MetricLoaded, "Turn it on and set "+rate+".")
 	add(Action{ID: "sqm-advice", Level: LevelAdvice, Title: "Turn on SQM, Smart Queue or Adaptive QoS", Metric: MetricLoaded, Command: "fixmyrouter fix --measure sqm-advice --load", Steps: []string{

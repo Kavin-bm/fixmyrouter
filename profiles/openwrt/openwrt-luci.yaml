@@ -3,7 +3,8 @@
 # Menu paths from the OpenWrt documentation (openwrt.org/docs/guide-user).
 # router_fix uses OpenWrt's documented ubus JSON-RPC API (/ubus) after the
 # person types their admin password. Not yet checked on a real device: if you
-# run OpenWrt, please test `fixmyrouter router plan` and report back.
+# run OpenWrt, please run `fixmyrouter router apply <setting> <value>` (answer no to only see
+# the plan) and report back.
 vendor: OpenWrt
 model: LuCI (any device)
 firmware_tested: "not device-tested yet (written for OpenWrt 21.02+)"
