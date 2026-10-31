@@ -83,7 +83,6 @@ func Actions(b *Bottleneck, m Measurements, p *profiles.Profile, goos string) []
 				"Point its antennas straight up (or one up, one sideways).",
 				"Work closer to the router, or add a mesh node or access point halfway (not in the dead zone itself).",
 				"For a desk, TV or console that never moves, an Ethernet cable beats any Wi-Fi.",
-				"Then run `fixmyrouter fix --measure wifi-placement` to measure before and after.",
 			}, Command: "fixmyrouter fix --measure wifi-placement"})
 		case "link-unstable", "gateway-loss", "gateway-latency", "gateway-jitter":
 			add(Action{ID: "router-restart", Level: LevelAdvice, Title: "Restart the router, then check its firmware", Metric: MetricGatewayJit, Steps: []string{
@@ -91,7 +90,6 @@ func Actions(b *Bottleneck, m Measurements, p *profiles.Profile, goos string) []
 				"In the router's admin page, look for Firmware or System Update and install any update.",
 				"If it is hot to touch, give it air; overheating routers drop packets.",
 				"Test with an Ethernet cable: if the cable is fast and steady, the problem is Wi-Fi, not the router.",
-				"Then run `fixmyrouter fix --measure router-restart` to measure before and after.",
 			}, Command: "fixmyrouter fix --measure router-restart"})
 		case "bufferbloat":
 			sqmActions(add, m, p)
