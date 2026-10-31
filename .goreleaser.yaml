@@ -37,7 +37,7 @@ changelog:
   filters:
     exclude: ["^docs:", "^test:"]
 
-# Homebrew: `brew install kavinbm/tap/fixmyrouter`. Needs a kavinbm/homebrew-tap
+# Homebrew: `brew install kavinbm16/tap/fixmyrouter`. Needs a kavinbm16/homebrew-tap
 # repo and a HOMEBREW_TAP_TOKEN secret with write access to it.
 homebrew_casks:
   - name: fixmyrouter
@@ -45,7 +45,7 @@ homebrew_casks:
       owner: kavinbm
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: https://github.com/kavinbm/fixmyrouter
+    homepage: https://github.com/kavinbm16/fixmyrouter
     description: Find out why your Wi-Fi is slow or unsafe, in plain English
     license: MIT
     # Binaries are not notarized yet; if macOS blocks the first run:

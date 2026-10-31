@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kavinbm/fixmyrouter/internal/discover"
-	"github.com/kavinbm/fixmyrouter/internal/fix"
-	"github.com/kavinbm/fixmyrouter/internal/run"
+	"github.com/kavinbm16/fixmyrouter/internal/discover"
+	"github.com/kavinbm16/fixmyrouter/internal/fix"
+	"github.com/kavinbm16/fixmyrouter/internal/run"
 )
 
 type request struct {

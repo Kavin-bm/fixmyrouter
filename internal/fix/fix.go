@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kavinbm/fixmyrouter/internal/checks"
-	"github.com/kavinbm/fixmyrouter/internal/store"
+	"github.com/kavinbm16/fixmyrouter/internal/checks"
+	"github.com/kavinbm16/fixmyrouter/internal/store"
 )
 
 const changesFile = "changes.json"

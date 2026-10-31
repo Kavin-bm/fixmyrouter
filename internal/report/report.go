@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kavinbm/fixmyrouter/internal/checks"
-	"github.com/kavinbm/fixmyrouter/internal/discover"
-	"github.com/kavinbm/fixmyrouter/internal/speed"
+	"github.com/kavinbm16/fixmyrouter/internal/checks"
+	"github.com/kavinbm16/fixmyrouter/internal/discover"
+	"github.com/kavinbm16/fixmyrouter/internal/speed"
 )
 
 // Audit is the full result of one run (audit, speed or check).

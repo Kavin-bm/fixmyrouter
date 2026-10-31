@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kavinbm/fixmyrouter/internal/checks"
-	"github.com/kavinbm/fixmyrouter/internal/discover"
-	"github.com/kavinbm/fixmyrouter/internal/report"
-	"github.com/kavinbm/fixmyrouter/internal/speed"
-	"github.com/kavinbm/fixmyrouter/internal/store"
-	"github.com/kavinbm/fixmyrouter/profiles"
+	"github.com/kavinbm16/fixmyrouter/internal/checks"
+	"github.com/kavinbm16/fixmyrouter/internal/discover"
+	"github.com/kavinbm16/fixmyrouter/internal/report"
+	"github.com/kavinbm16/fixmyrouter/internal/speed"
+	"github.com/kavinbm16/fixmyrouter/internal/store"
+	"github.com/kavinbm16/fixmyrouter/profiles"
 )
 
 // Kinds of run.

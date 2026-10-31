@@ -1,4 +1,4 @@
-module github.com/kavinbm/fixmyrouter
+module github.com/kavinbm16/fixmyrouter
 
 go 1.22
 

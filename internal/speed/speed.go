@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kavinbm/fixmyrouter/internal/checks"
+	"github.com/kavinbm16/fixmyrouter/internal/checks"
 )
 
 // Report holds the raw measurements. Advice lives in Findings.

@@ -17,14 +17,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kavinbm/fixmyrouter/internal/discover"
-	"github.com/kavinbm/fixmyrouter/internal/fix"
-	"github.com/kavinbm/fixmyrouter/internal/mcp"
-	"github.com/kavinbm/fixmyrouter/internal/report"
-	"github.com/kavinbm/fixmyrouter/internal/run"
-	"github.com/kavinbm/fixmyrouter/internal/store"
-	"github.com/kavinbm/fixmyrouter/internal/ui"
-	"github.com/kavinbm/fixmyrouter/profiles"
+	"github.com/kavinbm16/fixmyrouter/internal/discover"
+	"github.com/kavinbm16/fixmyrouter/internal/fix"
+	"github.com/kavinbm16/fixmyrouter/internal/mcp"
+	"github.com/kavinbm16/fixmyrouter/internal/report"
+	"github.com/kavinbm16/fixmyrouter/internal/run"
+	"github.com/kavinbm16/fixmyrouter/internal/store"
+	"github.com/kavinbm16/fixmyrouter/internal/ui"
+	"github.com/kavinbm16/fixmyrouter/profiles"
 )
 
 // version is set by the release build (-ldflags "-X main.version=...").

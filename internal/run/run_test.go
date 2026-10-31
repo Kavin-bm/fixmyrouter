@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kavinbm/fixmyrouter/internal/checks"
-	"github.com/kavinbm/fixmyrouter/internal/report"
+	"github.com/kavinbm16/fixmyrouter/internal/checks"
+	"github.com/kavinbm16/fixmyrouter/internal/report"
 )
 
 func TestSortFindings(t *testing.T) {

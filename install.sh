@@ -1,11 +1,11 @@
 #!/bin/sh
 # Install fixmyrouter from GitHub releases:
-#   curl -fsSL https://raw.githubusercontent.com/kavinbm/fixmyrouter/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/kavinbm16/fixmyrouter/main/install.sh | sh
 # Verifies the SHA-256 checksum before installing. Read it first if you like;
 # it only downloads the release archive for your OS/CPU and copies one binary.
 set -eu
 
-REPO="kavinbm/fixmyrouter"
+REPO="kavinbm16/fixmyrouter"
 VERSION="${FIXMYROUTER_VERSION:-latest}"
 BASE="${FIXMYROUTER_BASE_URL:-}" # for testing against a local mirror
 
