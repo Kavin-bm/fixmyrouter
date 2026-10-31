@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -19,6 +21,7 @@ import (
 	"github.com/kavinbm/fixmyrouter/internal/report"
 	"github.com/kavinbm/fixmyrouter/internal/run"
 	"github.com/kavinbm/fixmyrouter/internal/store"
+	"github.com/kavinbm/fixmyrouter/internal/ui"
 )
 
 // version is set by the release build (-ldflags "-X main.version=...").
@@ -49,6 +52,8 @@ Usage:
   fixmyrouter fix [<finding-id>] [--yes] list fixes fixmyrouter can make, or apply one after a yes
   fixmyrouter undo [<change-id>] [--all] put back a change from its snapshot
   fixmyrouter history [--json]          past scores and every change made
+  fixmyrouter ui [--port 7979] [--no-open]
+                                        local web UI on 127.0.0.1 (nothing loads from the internet)
   fixmyrouter version
 
 Exit codes: 0 nothing to fix, 1 error, 2 usage, 3 found something to fix.
@@ -78,6 +83,8 @@ func main() {
 		err = runUndo(args)
 	case "history":
 		err = runHistory(args)
+	case "ui":
+		err = runUI(ctx, args)
 	case "version", "--version", "-v":
 		fmt.Println("fixmyrouter", version)
 	case "help", "-h", "--help":
@@ -98,15 +105,26 @@ func main() {
 // parse parses flags that may come before or after positional arguments.
 func parse(fs *flag.FlagSet, args []string) []string {
 	var flags, pos []string
-	for _, a := range args {
-		if strings.HasPrefix(a, "-") {
-			flags = append(flags, a)
-		} else {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if !strings.HasPrefix(a, "-") {
 			pos = append(pos, a)
+			continue
+		}
+		flags = append(flags, a)
+		name := strings.TrimLeft(a, "-")
+		if f := fs.Lookup(name); f != nil && !strings.Contains(name, "=") && !isBool(f) && i+1 < len(args) {
+			i++
+			flags = append(flags, args[i]) // "--port 7878": the value is the next arg
 		}
 	}
 	fs.Parse(flags) // ExitOnError: exits with code 2 on a bad flag
 	return pos
+}
+
+func isBool(f *flag.Flag) bool {
+	b, ok := f.Value.(interface{ IsBoolFlag() bool })
+	return ok && b.IsBoolFlag()
 }
 
 func runCheck(ctx context.Context, kind string, args []string) error {
@@ -285,4 +303,30 @@ func runHistory(args []string) error {
 		fmt.Println("  none (fixmyrouter has never changed anything)")
 	}
 	return nil
+}
+
+func runUI(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("ui", flag.ExitOnError)
+	port := fs.Int("port", 7979, "port on 127.0.0.1 (a free one is picked if it's taken)")
+	noOpen := fs.Bool("no-open", false, "don't open the browser")
+	parse(fs, args)
+	return ui.ListenAndServe(ctx, version, *port, func(url string) {
+		fmt.Printf("fixmyrouter UI: %s (only reachable from this computer; Ctrl-C to stop)\n", url)
+		if !*noOpen {
+			openBrowser(url)
+		}
+	})
+}
+
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default:
+		cmd = exec.Command("xdg-open", url)
+	}
+	_ = cmd.Start()
 }

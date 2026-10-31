@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="fixmyrouter-token" content="{{TOKEN}}">
+<title>fixmyrouter</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%234ade80'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#findings">Skip to findings</a>
+<header class="top">
+  <div class="brand"><span class="dot" aria-hidden="true"></span>fixmyrouter</div>
+  <div class="top-right">
+    <span id="gateway" class="chip" hidden></span>
+    <button id="theme" class="ghost" type="button" aria-label="Switch to light theme">☀︎</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero card" aria-labelledby="score-title">
+    <div class="gauge-wrap">
+      <svg class="gauge" viewBox="0 0 120 120" role="img" aria-labelledby="score-title score-label">
+        <circle class="track" cx="60" cy="60" r="50"></circle>
+        <circle id="arc" class="arc" cx="60" cy="60" r="50"></circle>
+      </svg>
+      <div class="gauge-text">
+        <div id="score" class="score">–</div>
+        <div id="score-label" class="score-label">no result yet</div>
+      </div>
+    </div>
+    <div class="hero-body">
+      <h1 id="score-title">Your home network score</h1>
+      <p id="summary" class="muted">Run a check to see why your Wi-Fi is slow or unsafe. Nothing is changed unless you say yes.</p>
+      <div id="compare" class="compare" hidden></div>
+      <div class="actions">
+        <button id="run-check" class="primary" type="button" data-kind="check">Run full check</button>
+        <button class="secondary" type="button" data-kind="speed">Speed only</button>
+        <button class="secondary" type="button" data-kind="audit">Security only</button>
+      </div>
+      <label class="load"><input id="load" type="checkbox"> Include bufferbloat test <span class="muted">(downloads up to 200 MB)</span></label>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="measurements" class="grid" aria-label="Measurements" hidden></section>
+
+  <section id="findings" class="card" aria-labelledby="findings-title" hidden>
+    <h2 id="findings-title">What we found</h2>
+    <ul id="finding-list" class="findings"></ul>
+  </section>
+
+  <div class="grid two">
+    <section class="card" aria-labelledby="history-title">
+      <h2 id="history-title">Score over time</h2>
+      <div id="sparkline" class="spark"><p class="muted">Your scores will appear here.</p></div>
+    </section>
+    <section class="card" aria-labelledby="changes-title">
+      <h2 id="changes-title">Changes and undo</h2>
+      <ul id="changes" class="changes"><li class="muted">fixmyrouter has never changed anything.</li></ul>
+    </section>
+  </div>
+</main>
+
+<footer class="muted">Runs on your computer only. No accounts, no telemetry, nothing uploaded. <span id="version"></span></footer>
+
+<dialog id="confirm" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title">Apply this fix?</h2>
+    <p id="confirm-summary"></p>
+    <dl class="plan">
+      <dt>Network</dt><dd id="plan-service"></dd>
+      <dt>Before</dt><dd id="plan-before"></dd>
+      <dt>After</dt><dd id="plan-after"></dd>
+    </dl>
+    <p class="muted">A snapshot of the current setting is saved first. You can undo it any time here or with <code>fixmyrouter undo</code>.</p>
+    <div class="actions">
+      <button value="cancel" class="secondary">Cancel</button>
+      <button id="confirm-yes" value="yes" class="primary">Yes, apply it</button>
+    </div>
+  </form>
+</dialog>
+<script src="app.js"></script>
+</body>
+</html>
