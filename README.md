@@ -1,6 +1,8 @@
-# Your Wi-Fi is slow and maybe unsafe. Find out why in 10 seconds, fix it with one yes.
+# Your internet is slow. Find out exactly why, fix what can be fixed, and see the numbers before and after.
 
-**fixmyrouter** checks the network your family uses every day (crowded channel, 2.4 GHz, weak signal, slow DNS, lag under load, Telnet left open, UPnP, weak encryption), gives it a score out of 100, and tells you what to change in plain English. It's read-only until you say yes, and every change has a one-command undo.
+**fixmyrouter** names the main bottleneck on the connection your family uses every day: **Wi-Fi** (weak signal, 2.4 GHz, crowded channel), **bufferbloat** (lag when someone downloads), **DNS**, **the router**, or **your internet provider**, with the measurements behind the verdict. Then it fixes what is fixable on your side, measures again, and shows you the difference. It's read-only until you say yes, and every change has a one-command undo.
+
+**What it can't do:** make your provider's line faster. If the bottleneck is your ISP, fixmyrouter says so and writes a timestamped report you can send them. It never claims a fix helped unless the before/after numbers show it.
 
 [![CI](https://github.com/Kavin-bm/fixmyrouter/actions/workflows/ci.yml/badge.svg)](https://github.com/Kavin-bm/fixmyrouter/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
@@ -46,19 +48,50 @@ DNS lookup time (median of popular sites):
 Score: 88/100 (Good). 4 pass, 1 warn, 0 fail, 0 could not run.
 ```
 
+```text
+$ fixmyrouter diagnose --throughput --plan 100
+Main bottleneck: Wi-Fi (this device to the router). Weak signal (-78 dBm), on 2.4 GHz though this device supports 5 GHz.
+  Evidence:
+    - Wi-Fi signal: -78 dBm (weak; good is -67 or better)
+    - Band: 2.4 GHz, channel 6, 7 neighbour networks on it
+    - Router ping: 24 ms median, 18 ms jitter, 3% loss
+  How to fix it:
+    [router] Move your 2.4GHz Wi-Fi to channel 11 (fixmyrouter does it on the router)
+    [guided] Turn on band steering so devices pick 5 GHz on your OpenWrt LuCI
+    [advice] Get a stronger signal where you use the internet
+$ fixmyrouter fix --measure set-dns
+...
+DNS lookup                   48 ms      12 ms    -36.0  better
+Measured improvement: DNS lookup 48 ms -> 12 ms (-75%).
+```
+<sub>Illustrative output; your numbers will differ.</sub>
+
 | Command | What it does |
 |---|---|
+| `fixmyrouter diagnose` | The main bottleneck (Wi-Fi, bufferbloat, DNS, router or ISP) with evidence and fixes ordered by how automatic they are. `--throughput` adds a capped download test (25 MB from Cloudflare by default), `--load` the lag-under-load test, `--plan <Mbps>` compares with what you pay for. |
+| `fixmyrouter fix --measure [id]` | Measures, applies the fix (after a yes) or walks you through it, measures again with the same tests, and prints before/after. |
+| `fixmyrouter report --isp` | Samples the connection every `--interval` (`--samples N`) and writes a timestamped Markdown + JSON report for your ISP. Shows the data budget and asks first. |
+| `fixmyrouter router apply\|undo\|history` | Changes the Wi-Fi channel or turns on SQM **only on routers whose profile allows it** (today: OpenWrt, unverified), with the admin password you type. Snapshot first, `router undo` restores it. |
 | `fixmyrouter check` | Everything below, one 0-100 score, worst problems first. `--load` adds the bufferbloat test. |
 | `fixmyrouter speed` | Wi-Fi band, channel, width, signal/noise, link rate; channel congestion and the quietest channel; router latency, jitter and loss; your DNS vs Cloudflare, Google and Quad9. |
 | `fixmyrouter audit` | Router security: admin page over plain HTTP, Telnet open, UPnP port forwarding (IGD), Wi-Fi encryption (open/WEP/WPA/WPA2/WPA3). Talks only to your router. |
-| `fixmyrouter ui` | The dashboard above, on `127.0.0.1` only: score gauge, before/after, findings, "apply this fix" with a confirmation, undo history. |
+| `fixmyrouter ui` | The dashboard above, on `127.0.0.1` only: Diagnose button, verdict card, fix with a confirmation and a before/after panel, ISP report download, score gauge, findings, undo history. |
 | `fixmyrouter fix [id]` | Lists, or applies after a yes, the fixes it can make for you. Today: switch this Mac's DNS to the fastest resolver. |
 | `fixmyrouter undo` | Puts back the last change from its snapshot (`--all` for every change). |
 | `fixmyrouter history` | Past scores and every change ever made. |
-| `fixmyrouter mcp` | MCP server for Claude Code, Codex and Gemini CLI. |
+| `fixmyrouter mcp` | MCP server for Claude Code, Codex and Gemini CLI (`diagnose`, `measure_fix`, `isp_report`, `check`, ...). |
 | `fixmyrouter profiles validate` | Checks community router profiles (for contributors). |
 
 Every command takes `--json`. Exit codes are stable: `0` nothing to fix, `1` error, `2` usage, `3` found something to fix.
+
+### Fix levels
+
+| Level | Who does it | Today |
+|---|---|---|
+| **auto** | fixmyrouter, on this computer, after your yes | Switch DNS to the fastest resolver it measured (macOS) |
+| **router** | fixmyrouter, on the router, after your yes and your typed password | Wi-Fi channel and SQM on OpenWrt (**unverified profile**: tested against a simulated router only) |
+| **guided** | you, with click-by-click steps for your model | Any setting a router profile describes (channel, band steering, DNS, QoS) |
+| **advice** | you | Everything else: router placement, cables, restarting, talking to your ISP |
 
 ### Platform support
 
@@ -72,10 +105,10 @@ Only macOS has been run end to end so far. Linux and Windows build in CI and the
 
 ## Safety promises
 
-- **Read-only until you say yes.** Every check only reads. The one thing fixmyrouter can change (this computer's DNS on macOS) needs an explicit yes, saves a snapshot first, checks the change took, and `fixmyrouter undo` puts it back.
-- **Never touches your router's settings.** It never logs in to the router, never sends a password (default or otherwise), never brute forces anything and never touches firmware. Router fixes are step-by-step instructions, with exact menu paths when a community profile matches your model.
+- **Read-only until you say yes.** Every check only reads. Changes on this computer (DNS on macOS) need an explicit yes, save a snapshot first, check the change took, and `fixmyrouter undo` puts it back.
+- **Router changes only where a profile allows them, only with your password.** fixmyrouter logs in to your router only for `fixmyrouter router` (or `fix --measure` on a router fix), only if your router's profile lists that setting under `router_fix`, and only with the admin password you type. It is sent once to your own gateway, never stored, and never retried; there is no default-password list and no brute forcing. It shows the exact change, saves a snapshot, and `fixmyrouter router undo` restores it. The web UI and MCP tools never handle router passwords. It never touches firmware. For every other router, fixes are step-by-step instructions.
 - **Your router only.** Router probes go only to your own default gateway, which comes from your OS routing table. You can't point it at another IP, and it refuses to run if the gateway isn't a private LAN address. The one exception is the UPnP check's standard SSDP discovery packet: like every phone and TV, it goes to the LAN multicast group, and only the gateway's replies are read.
-- **No telemetry, no accounts, no cloud.** Outside traffic is only what you'd expect from a speed check: DNS test lookups to 1.1.1.1, 8.8.8.8 and 9.9.9.9, the Cloudflare download if you ask for `--load` (up to 200 MB), and a MAC-prefix lookup if you pass `discover --online`. Results stay in `~/.fixmyrouter`.
+- **No telemetry, no accounts, no cloud.** Outside traffic is only what you'd expect from a speed check: DNS test lookups to 1.1.1.1, 8.8.8.8 and 9.9.9.9, the Cloudflare downloads if you ask for `--throughput` (25 MB by default, max 200) or `--load` (up to 200 MB) or an ISP report, and a MAC-prefix lookup if you pass `discover --online`. Results stay in `~/.fixmyrouter`.
 - **The UI is local.** It listens on 127.0.0.1, loads nothing from the internet, and every API call needs a per-run secret token, so other websites can't drive it.
 
 ## Paste this into your coding agent
@@ -83,10 +116,10 @@ Only macOS has been run end to end so far. Linux and Windows build in CI and the
 Using Claude Code, Codex, Gemini CLI or Cursor? Paste this:
 
 ```text
-Use fixmyrouter (https://github.com/Kavin-bm/fixmyrouter) to find out why my Wi-Fi is slow or unsafe.
-Follow PROMPT.md in that repo exactly: run `fixmyrouter check --json`, explain the score and each
-finding to me in plain language, walk me through router settings step by step, and ask me before
-every change. Never log in to my router.
+Use fixmyrouter (https://github.com/Kavin-bm/fixmyrouter) to find out why my internet is slow.
+Follow PROMPT.md in that repo exactly: run `fixmyrouter diagnose --json`, explain the verdict and
+its numbers to me in plain language, fix what can be fixed only after I say yes, and show me the
+before/after. Never ask for or type my router password yourself.
 ```
 
 Agents that speak MCP can call it directly: `claude mcp add fixmyrouter -- fixmyrouter mcp`. See [PROMPT.md](PROMPT.md).
@@ -104,7 +137,13 @@ Start at 100. Each open problem costs points by severity: high 25, medium 12, lo
 - [x] Router profiles with validation and editor schema
 - [ ] First tagged release: Homebrew tap, curl installer, Windows zip (**coming soon**)
 - [ ] Run and fix on real Linux and Windows machines; DNS fix there
-- [ ] Upload bufferbloat, multi-stream throughput
+- [x] `diagnose`: one verdict (Wi-Fi, bufferbloat, DNS, router, ISP) with evidence and fixes by level
+- [x] `fix --measure`: before/after numbers, no claimed gain without a measured one
+- [x] Capped multi-stream download test; `report --isp` evidence report
+- [x] Router-side fixes behind a profile allow-list (OpenWrt driver: channel, SQM) with snapshot and undo
+- [ ] Verify the OpenWrt driver on a real device; more drivers only for documented, local APIs
+- [ ] Upload speed and upload bufferbloat; DNS fix on the router itself (DHCP DNS) as a router-level fix
+- [ ] Linux/Windows automatic DNS fix
 - [ ] More security checks: WPS, WAN-side remote admin, firmware age (from profiles)
 - [ ] 20+ verified router profiles, starting with Indian ISPs (JioFiber, Airtel Xstream) and TP-Link, D-Link, Netgear
 - [ ] Before/after share card in the UI

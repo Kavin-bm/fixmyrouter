@@ -29,7 +29,7 @@ PRs that break these are closed:
 
 - Checks are **read-only**. Anything that changes something must go through `internal/fix`: a plan shown to the user, an explicit yes, a snapshot saved first, and an undo.
 - Talk **only to the default gateway** (plus documented public test servers in `speed`). Never accept an arbitrary target IP.
-- **Never send credentials**, never guess passwords, no exploits, no scanning other hosts.
+- **Never send credentials** except the password a person types for a profile-allowed router fix (`internal/routerfix`: once, to the gateway, never stored); never guess passwords, no exploits, no scanning other hosts.
 - No telemetry, accounts or cloud services. The UI loads nothing from the internet.
 - Every finding needs a `Detail` a non-technical person understands and a `Fix`.
 - Don't claim something works in docs unless you ran it. Mark the rest "coming soon".

@@ -5,6 +5,13 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 ## [Unreleased]
 
 ### Added
+- `diagnose`: names the primary bottleneck (Wi-Fi, bufferbloat, DNS, router or ISP) with an impact score, evidence and plain-language explanation, and fixes ordered auto / router / guided / advice. Notes when it runs over a phone hotspot.
+- `fix --measure [id]`: measures, applies the fix after a yes (or walks you through it), measures again with the same tests and prints before/after. Only reports an improvement when it beats measurement-noise thresholds.
+- `report --isp --samples N --interval D`: timestamped Markdown + JSON evidence report with the data budget shown up front.
+- Opt-in capped download test (`--throughput`, 4 streams from speed.cloudflare.com, 25 MB default, 200 MB max).
+- `router apply|undo|history`: Wi-Fi channel and SQM changes on OpenWrt via its ubus API, only for profiles with a `router_fix` allow-list, with the typed admin password (sent once, never stored), a snapshot and undo. The OpenWrt profile is **unverified** (tested against a simulated router).
+- UI: Diagnose button with opt-in download tests, verdict card, Fix with confirmation, before/after panel, ISP report download.
+- MCP: `diagnose`, `measure_fix`, `isp_report` tools.
 - `check` command: speed and security together, with one 0-100 score and findings sorted worst first.
 - `speed`: Wi-Fi band, channel, width, signal/noise and link rate; channel congestion and the quietest channel; router latency, jitter and loss; DNS comparison against Cloudflare, Google and Quad9; opt-in bufferbloat test (`--load`).
 - `audit`: plain-HTTP admin page, Telnet, UPnP port forwarding (IGD) and Wi-Fi encryption (open/WEP/WPA/WPA2/WPA3).

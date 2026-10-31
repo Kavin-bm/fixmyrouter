@@ -2,7 +2,20 @@
 
 A profile tells fixmyrouter where each speed and security setting lives on one router model (channel, band steering, DNS, QoS, UPnP...). When `fixmyrouter check` recognises your router from its admin page, every finding gets a `router_steps` line with the exact menu path, in the terminal, the UI and the JSON for agents. Profiles are embedded in the binary, so they work offline.
 
-fixmyrouter never logs in to your router, so profiles are **instructions for a person**, not automation.
+Profiles are mainly **instructions for a person**. A profile may also allow a few router-side changes with a `router_fix` block (see below); without one, fixmyrouter never logs in to that router.
+
+## `router_fix` (automatic router changes)
+
+```yaml
+router_fix:
+  driver: openwrt-ubus                       # a driver built into fixmyrouter
+  settings: [wifi_channel_2g, wifi_channel_5g, sqm_qos]
+```
+
+- Only settings listed here can be changed by `fixmyrouter router apply` / `fix --measure`, and only settings the driver supports (the validator checks both).
+- The person types the admin password; it is sent once to the gateway, never stored and never retried. Profiles must never contain credentials.
+- Add a driver only for a documented local API, with tests against a fake router (see `internal/routerfix`). Keep `verified: false` until someone has applied **and undone** each setting on a real device.
+- Today: `openwrt-ubus` (OpenWrt LuCI profile, **unverified**).
 
 ## Add yours in 5 minutes
 
@@ -18,6 +31,7 @@ No Go needed. Editors that understand JSON Schema (VS Code with the YAML extensi
 
 - Only describe settings and menu paths. **Never include passwords, default credentials, exploits or anything that bypasses login.** The validator rejects anything that looks like a username or password.
 - Say which firmware version you checked, and where the paths come from (`source`).
+- `verified: false` profiles are labelled as unverified in guided steps and router fixes.
 - Allowed settings: `wifi_channel_2g`, `wifi_channel_5g`, `band_steering`, `dns_servers`, `sqm_qos`, `telnet`, `upnp`, `https_admin`, `wps`, `remote_management`, `wifi_security`.
 
 ## Template
