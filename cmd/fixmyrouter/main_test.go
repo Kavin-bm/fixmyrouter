@@ -14,3 +14,9 @@ func TestParse(t *testing.T) {
 		t.Fatalf("port=%d yes=%v pos=%v", *port, *yes, pos)
 	}
 }
+
+func TestHasFlag(t *testing.T) {
+	if !hasFlag([]string{"set-dns", "--measure"}, "measure") || hasFlag([]string{"--measured"}, "measure") {
+		t.Fatal("hasFlag")
+	}
+}

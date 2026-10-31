@@ -44,6 +44,18 @@ var errFindings = errors.New("findings")
 const usage = `fixmyrouter - find out why your Wi-Fi is slow or unsafe, in plain English.
 
 Usage:
+  fixmyrouter diagnose [--load] [--throughput] [--plan Mbps] [--json]
+                                        name the main bottleneck (Wi-Fi, bufferbloat, DNS,
+                                        router or ISP) with the numbers, and how to fix it.
+                                        --throughput downloads up to 25 MB (--throughput-mb N)
+  fixmyrouter fix --measure [<fix-id>] [--load] [--throughput] [--yes]
+                                        measure, apply the fix (after a yes) or walk you
+                                        through it, measure again, and show the difference
+  fixmyrouter report --isp [--samples 6] [--interval 10m] [--plan Mbps] [--out dir]
+                                        timestamped evidence (Markdown + JSON) for your ISP
+  fixmyrouter router apply <setting> <value> | undo [<id>] | history
+                                        change the Wi-Fi channel or SQM on the router, only
+                                        where its profile allows it, with your typed password
   fixmyrouter check [--json] [--load]   everything below in one go, with a 0-100 score
   fixmyrouter speed [--json] [--load]   Wi-Fi band/channel/signal, congestion, router latency
                                         and jitter, DNS speed; --load adds a bufferbloat test
@@ -64,8 +76,12 @@ Usage:
 
 Exit codes: 0 nothing to fix, 1 error, 2 usage, 3 found something to fix.
 
-Router probes go only to your own default gateway. fixmyrouter never logs in
-to your router, never tries passwords, and changes nothing without a yes.
+fixmyrouter can't make your ISP faster. It finds what is slowing you down,
+fixes what can be fixed on your side, and shows the numbers before and after.
+Router probes go only to your own default gateway. It logs in to the router
+only for "fixmyrouter router" (or fix --measure on a router fix), with the
+password you type, sent once and never stored. It never guesses passwords
+and changes nothing without a yes.
 State lives in ~/.fixmyrouter (snapshots and past results, never uploaded).
 `
 
@@ -83,8 +99,18 @@ func main() {
 		err = runCheck(ctx, cmd, args)
 	case "discover":
 		err = runDiscover(ctx, args)
+	case "diagnose":
+		err = runDiagnose(ctx, args)
 	case "fix":
-		err = runFix(args, os.Stdin)
+		if hasFlag(args, "measure") {
+			err = runFixMeasure(ctx, args, os.Stdin)
+		} else {
+			err = runFix(args, os.Stdin)
+		}
+	case "router":
+		err = runRouter(ctx, args, os.Stdin)
+	case "report":
+		err = runReport(ctx, args, os.Stdin)
 	case "undo":
 		err = runUndo(args)
 	case "history":
@@ -110,6 +136,16 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(exitError)
 	}
+}
+
+// hasFlag reports whether a bool flag is set in args.
+func hasFlag(args []string, name string) bool {
+	for _, a := range args {
+		if a == "-"+name || a == "--"+name || a == "--"+name+"=true" {
+			return true
+		}
+	}
+	return false
 }
 
 // parse parses flags that may come before or after positional arguments.
